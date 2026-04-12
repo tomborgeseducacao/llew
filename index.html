@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
+<html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LLEW CRM — Painel de Leads</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&amp;family=DM+Sans:wght@300;400;500&amp;display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -252,7 +250,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
 .loading-dot:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }
 </style>
-</head>
+<link href="chrome-extension://iibninhmiggehlcdolcilmhacighjamp/shared-ui-components/fonts.css" rel="stylesheet"></head>
 <body>
 
 <!-- SIDEBAR -->
@@ -285,7 +283,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
 <main class="main">
   <div class="topbar">
     <div>
-      <span class="topbar-title">Kanban de Leads <span id="leads-count"></span></span>
+      <span class="topbar-title">Kanban de Leads <span id="leads-count">(2 leads)</span></span>
     </div>
     <div class="topbar-actions">
       <button class="btn btn-outline" onclick="carregarLeads()">↻ Atualizar</button>
@@ -298,22 +296,22 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
     <div class="stats">
       <div class="stat-card">
         <div class="stat-label">Total de leads</div>
-        <div class="stat-val" id="st-total">—</div>
+        <div class="stat-val" id="st-total">2</div>
         <div class="stat-sub">no funil ativo</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">SQLs — 400+ pts</div>
-        <div class="stat-val hot" id="st-sql">—</div>
+        <div class="stat-val hot" id="st-sql">0</div>
         <div class="stat-sub">prontos para fechar</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Docs pendentes</div>
-        <div class="stat-val" id="st-docs">—</div>
+        <div class="stat-val" id="st-docs">2</div>
         <div class="stat-sub">aguardando envio</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Taxa paga</div>
-        <div class="stat-val ok" id="st-taxa">—</div>
+        <div class="stat-val ok" id="st-taxa">0</div>
         <div class="stat-sub">matrículas confirmadas</div>
       </div>
     </div>
@@ -323,24 +321,95 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
       <input type="text" id="busca" placeholder="Buscar por nome ou WhatsApp..." oninput="filtrar()">
       <select id="f-programa" onchange="filtrar()">
         <option value="">Todos os programas</option>
-      </select>
+      <option value="1e9d1118-0718-4fe5-8e43-7a84ab3abae9">Administração (Business Administration)</option><option value="62f0c052-7103-4e0e-9ec1-9b8892d893e3">Desenvolvimento de Negócios e Inovação</option><option value="dba1f130-62b6-4a92-ab67-00837a9979ba">Negócios Internacionais</option><option value="cce88817-c24f-4d5c-a9ce-fce80ea34ad5">Marketing Digital</option><option value="e25e192d-8c6d-4320-a482-b9f0d0774888">Tecnologias Emergentes na Educação</option><option value="edc784cf-279d-488a-aacd-c2c47a12be06">Gestão de Cuidados da Saúde</option><option value="b0618e41-b880-4cd1-a581-ee5ec4d36ef1">Psicologia Organizacional</option><option value="89ed806f-7d0c-47aa-8365-0b03af031fac">Estudos Jurídicos (Direito Internacional)</option></select>
       <select id="f-turma" onchange="filtrar()">
         <option value="">Todas as turmas</option>
-      </select>
+      <option value="2d984d79-79cd-40e9-849c-3cefe8c58c72">Turma Janeiro 2026</option><option value="690fc3ab-a918-49cb-9911-db4cfd52483e">Turma Fevereiro 2026</option><option value="2e233c9c-4249-49b8-abd6-3903d59fee47">Turma Março 2026</option><option value="b4146aaa-2d29-47f0-b95d-fce7200666c9">Turma Maio 2026</option><option value="e19110bb-187c-40e1-be63-c7d94fa1f4e5">Turma Junho 2026</option><option value="cb190d53-d5ef-4d61-8190-47d8d79e6214">Turma Julho 2026</option><option value="dd82ee2c-2981-489b-b066-730457e71eff">Turma Agosto 2026</option><option value="c0bbf56d-24d6-4a4d-8965-8f24983abb9d">Turma Outubro 2026</option><option value="2d197aba-d426-44d8-a853-a19353637610">Turma Novembro 2026</option></select>
       <select id="f-bolsa" onchange="filtrar()">
         <option value="">Todas as bolsas</option>
-      </select>
+      <option value="b3863d19-93ab-4b7b-b96c-13d58ae67dbc">Carbonari</option><option value="0642271f-244c-4bcf-8dd1-826792921629">Carbonari / Alliance</option><option value="f004eac9-d7d3-4eec-a8de-b7252c5e38a5">Healthcare</option><option value="f57153f0-eac4-40d2-8fdc-21aac9824a43">CFA / CRA Jubileu 60</option></select>
     </div>
 
     <!-- KANBAN -->
-    <div class="kanban" id="kanban">
-      <div class="loading">
-        <div class="loading-dot"></div>
-        <div class="loading-dot"></div>
-        <div class="loading-dot"></div>
-        <p style="margin-top:12px">Carregando leads do Supabase...</p>
+    <div class="kanban" id="kanban"><div class="col">
+      <div class="col-header" style="background:#64748b18;border:1px solid #64748b35">
+        <span class="col-name" style="color:#64748b">Lead Novo</span>
+        <span class="col-badge" style="background:#64748b25;color:#64748b">0</span>
       </div>
-    </div>
+      <div class="col-cards col-drop-zone" id="col-6abd556f-60ee-4718-8b3a-058f6c15d565" ondragover="onDragOver(event,'6abd556f-60ee-4718-8b3a-058f6c15d565')" ondragleave="onDragLeave('6abd556f-60ee-4718-8b3a-058f6c15d565')" ondrop="onDrop(event,'6abd556f-60ee-4718-8b3a-058f6c15d565','Lead Novo')">
+        <div class="col-empty">Sem leads</div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#2563eb18;border:1px solid #2563eb35">
+        <span class="col-name" style="color:#2563eb">Descoberta</span>
+        <span class="col-badge" style="background:#2563eb25;color:#2563eb">1</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-c0795aca-14f2-405d-9b7a-4f3ab7f6c637" ondragover="onDragOver(event,'c0795aca-14f2-405d-9b7a-4f3ab7f6c637')" ondragleave="onDragLeave('c0795aca-14f2-405d-9b7a-4f3ab7f6c637')" ondrop="onDrop(event,'c0795aca-14f2-405d-9b7a-4f3ab7f6c637','Descoberta')">
+        <div class="card" draggable="true" data-id="7eef164e-ecb9-4985-9446-49f0ab3d75dd" ondragstart="onDragStart(event,'7eef164e-ecb9-4985-9446-49f0ab3d75dd')" ondragend="onDragEnd()" onclick="abrirDetalhe('7eef164e-ecb9-4985-9446-49f0ab3d75dd')">
+        <div class="card-name">teste</div>
+        <div class="card-prog">Administração (Business Administration)</div>
+        <span class="doc-badge" style="background:#fef3c7;color:#92400e">Docs pendentes</span>
+        <div class="card-score-bar">
+          <div class="card-score-fill" style="width:0%;background:#2563eb"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:500;color:#2563eb;background:#2563eb15;padding:3px 8px;border-radius:6px">0 pts</span>
+          <span class="card-days ">hoje</span>
+        </div>
+        <div class="card-foot">
+          <button class="card-wpp" onclick="event.stopPropagation();abrirWpp('19983322939')">↗ WhatsApp</button>
+          <span style="font-size:10px;color:var(--suave)">Turma Janeiro 2026</span>
+        </div>
+      </div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#d9770618;border:1px solid #d9770635">
+        <span class="col-name" style="color:#d97706">Interesse</span>
+        <span class="col-badge" style="background:#d9770625;color:#d97706">0</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-ded827be-79db-40a9-9adb-50d39bf62f43" ondragover="onDragOver(event,'ded827be-79db-40a9-9adb-50d39bf62f43')" ondragleave="onDragLeave('ded827be-79db-40a9-9adb-50d39bf62f43')" ondrop="onDrop(event,'ded827be-79db-40a9-9adb-50d39bf62f43','Interesse')">
+        <div class="col-empty">Sem leads</div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#ea580c18;border:1px solid #ea580c35">
+        <span class="col-name" style="color:#ea580c">Consideração</span>
+        <span class="col-badge" style="background:#ea580c25;color:#ea580c">1</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-0918bdd0-d07f-4a7c-85e6-8d484cecafe9" ondragover="onDragOver(event,'0918bdd0-d07f-4a7c-85e6-8d484cecafe9')" ondragleave="onDragLeave('0918bdd0-d07f-4a7c-85e6-8d484cecafe9')" ondrop="onDrop(event,'0918bdd0-d07f-4a7c-85e6-8d484cecafe9','Consideração')">
+        <div class="card" draggable="true" data-id="c42b0b58-ed96-4c07-b672-0d17fc3626c8" ondragstart="onDragStart(event,'c42b0b58-ed96-4c07-b672-0d17fc3626c8')" ondragend="onDragEnd()" onclick="abrirDetalhe('c42b0b58-ed96-4c07-b672-0d17fc3626c8')">
+        <div class="card-name">Simone</div>
+        <div class="card-prog">Gestão de Cuidados da Saúde</div>
+        <span class="doc-badge" style="background:#fef3c7;color:#92400e">Docs pendentes</span>
+        <div class="card-score-bar">
+          <div class="card-score-fill" style="width:0%;background:#ea580c"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:500;color:#ea580c;background:#ea580c15;padding:3px 8px;border-radius:6px">0 pts</span>
+          <span class="card-days ">hoje</span>
+        </div>
+        <div class="card-foot">
+          <button class="card-wpp" onclick="event.stopPropagation();abrirWpp('Gomes')">↗ WhatsApp</button>
+          <span style="font-size:10px;color:var(--suave)">Turma Maio 2026</span>
+        </div>
+      </div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#dc262618;border:1px solid #dc262635">
+        <span class="col-name" style="color:#dc2626">Decisão</span>
+        <span class="col-badge" style="background:#dc262625;color:#dc2626">0</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-33ba1967-2959-4663-a3d6-b459cba81020" ondragover="onDragOver(event,'33ba1967-2959-4663-a3d6-b459cba81020')" ondragleave="onDragLeave('33ba1967-2959-4663-a3d6-b459cba81020')" ondrop="onDrop(event,'33ba1967-2959-4663-a3d6-b459cba81020','Decisão')">
+        <div class="col-empty">Sem leads</div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#05966918;border:1px solid #05966935">
+        <span class="col-name" style="color:#059669">Aluno</span>
+        <span class="col-badge" style="background:#05966925;color:#059669">0</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-63cf6fe2-5239-48db-be6b-b8e2b5d7e956" ondragover="onDragOver(event,'63cf6fe2-5239-48db-be6b-b8e2b5d7e956')" ondragleave="onDragLeave('63cf6fe2-5239-48db-be6b-b8e2b5d7e956')" ondrop="onDrop(event,'63cf6fe2-5239-48db-be6b-b8e2b5d7e956','Aluno')">
+        <div class="col-empty">Sem leads</div>
+      </div>
+    </div></div>
   </div>
 </main>
 
@@ -351,9 +420,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
       <span class="topbar-title">Templates de Mensagem <span id="tpl-total"></span></span>
     </div>
     <div class="topbar-actions">
-      <input type="text" id="tpl-busca" placeholder="Buscar template..." 
-        style="font-size:12px;padding:8px 14px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif;width:260px"
-        oninput="filtrarTemplates()">
+      <input type="text" id="tpl-busca" placeholder="Buscar template..." style="font-size:12px;padding:8px 14px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif;width:260px" oninput="filtrarTemplates()">
     </div>
   </div>
   <div class="content">
@@ -401,21 +468,21 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
       <div class="form-row">
         <div class="form-group">
           <label>Programa</label>
-          <select id="f-prog-novo"></select>
+          <select id="f-prog-novo"><option value="1e9d1118-0718-4fe5-8e43-7a84ab3abae9">Administração (Business Administration)</option><option value="62f0c052-7103-4e0e-9ec1-9b8892d893e3">Desenvolvimento de Negócios e Inovação</option><option value="dba1f130-62b6-4a92-ab67-00837a9979ba">Negócios Internacionais</option><option value="cce88817-c24f-4d5c-a9ce-fce80ea34ad5">Marketing Digital</option><option value="e25e192d-8c6d-4320-a482-b9f0d0774888">Tecnologias Emergentes na Educação</option><option value="edc784cf-279d-488a-aacd-c2c47a12be06">Gestão de Cuidados da Saúde</option><option value="b0618e41-b880-4cd1-a581-ee5ec4d36ef1">Psicologia Organizacional</option><option value="89ed806f-7d0c-47aa-8365-0b03af031fac">Estudos Jurídicos (Direito Internacional)</option></select>
         </div>
         <div class="form-group">
           <label>Turma</label>
-          <select id="f-turma-novo"></select>
+          <select id="f-turma-novo"><option value="2d984d79-79cd-40e9-849c-3cefe8c58c72">Turma Janeiro 2026</option><option value="690fc3ab-a918-49cb-9911-db4cfd52483e">Turma Fevereiro 2026</option><option value="2e233c9c-4249-49b8-abd6-3903d59fee47">Turma Março 2026</option><option value="b4146aaa-2d29-47f0-b95d-fce7200666c9">Turma Maio 2026</option><option value="e19110bb-187c-40e1-be63-c7d94fa1f4e5">Turma Junho 2026</option><option value="cb190d53-d5ef-4d61-8190-47d8d79e6214">Turma Julho 2026</option><option value="dd82ee2c-2981-489b-b066-730457e71eff">Turma Agosto 2026</option><option value="c0bbf56d-24d6-4a4d-8965-8f24983abb9d">Turma Outubro 2026</option><option value="2d197aba-d426-44d8-a853-a19353637610">Turma Novembro 2026</option></select>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Bolsa</label>
-          <select id="f-bolsa-novo"></select>
+          <select id="f-bolsa-novo"><option value="b3863d19-93ab-4b7b-b96c-13d58ae67dbc">Carbonari</option><option value="0642271f-244c-4bcf-8dd1-826792921629">Carbonari / Alliance</option><option value="f004eac9-d7d3-4eec-a8de-b7252c5e38a5">Healthcare</option><option value="f57153f0-eac4-40d2-8fdc-21aac9824a43">CFA / CRA Jubileu 60</option></select>
         </div>
         <div class="form-group">
           <label>Origem</label>
-          <select id="f-origem-novo"></select>
+          <select id="f-origem-novo"><option value="49f9650f-156e-49a3-b290-66d21a527314">Funil (página web)</option><option value="563cc9a9-1089-48d9-a5f9-635ce51c0292">WhatsApp direto</option><option value="8beb13b7-e904-40f9-9b1e-1534aab9555a">Indicação de aluno</option><option value="7cecabc5-ae82-416b-9b04-03c0c59509b9">Planilha importada</option><option value="7f1243be-c7a5-4e4e-ab9c-9c0b0042c8df">Instagram</option><option value="393486a4-d325-44ab-9215-f4e749e3a13f">LinkedIn</option></select>
         </div>
       </div>
     </div>
@@ -920,10 +987,10 @@ init();
 </script>
 <!-- DEPLOY BAR -->
 <div class="deploy-bar">
-  <div class="deploy-status" id="deploy-status"></div>
-  <button class="deploy-btn" id="deploy-btn" onclick="publicarNoGitHub()">
-    <span id="deploy-icon">↑</span>
-    <span id="deploy-label">Publicar em llew.com.br</span>
+  <div class="deploy-status show" id="deploy-status">Preparando arquivo para upload...</div>
+  <button class="deploy-btn" id="deploy-btn" onclick="publicarNoGitHub()" disabled="">
+    <span id="deploy-icon">⟳</span>
+    <span id="deploy-label">Publicando...</span>
   </button>
 </div>
 
@@ -1040,5 +1107,6 @@ async function publicarNoGitHub() {
 }
 </script>
 
-</body>
-</html>
+
+
+</body><div style="all: initial;"></div><div style="all: initial;"></div></html>
