@@ -494,11 +494,20 @@ function renderKanban() {
   const filtrados = getFiltrados();
   const board = document.getElementById('kanban');
 
+  // Mapeia nome da coluna para slug comparável
+  function colToSlug(nome) {
+    return nome.toLowerCase()
+      .replace(/ã/g,'a').replace(/â/g,'a').replace(/á/g,'a').replace(/à/g,'a')
+      .replace(/é/g,'e').replace(/ê/g,'e').replace(/è/g,'e')
+      .replace(/í/g,'i').replace(/ó/g,'o').replace(/ô/g,'o').replace(/ú/g,'u')
+      .replace(/ç/g,'c').replace(/\s+/g,'_');
+  }
+
   board.innerHTML = colunas.map(col => {
+    const colSlug = colToSlug(col.nome);
     const leadsCol = filtrados.filter(l => {
-      if (col.score_minimo === -1) return l.status_kanban === 'aluno';
-      return l.status_kanban === col.nome.toLowerCase().replace(/ã/g,'a').replace(/é/g,'e').replace(/ç/g,'c').replace(/ /g,'_') ||
-             (col.score_minimo !== -1 && l.score_total >= col.score_minimo && l.score_total <= col.score_maximo && l.status_kanban !== 'aluno');
+      const leadSlug = (l.status_kanban || 'lead_novo');
+      return leadSlug === colSlug;
     });
 
     const cards = leadsCol.length ? leadsCol.map(l => {
@@ -566,7 +575,11 @@ async function onDrop(e, colId, colNome) {
   if (!dragId) return;
   const col = colunas.find(c => c.id === colId);
   if (!col) return;
-  const novoStatus = col.nome.toLowerCase().replace(/ã/g,'a').replace(/é/g,'e').replace(/ç/g,'c').replace(/ /g,'_');
+  const novoStatus = col.nome.toLowerCase()
+    .replace(/ã/g,'a').replace(/â/g,'a').replace(/á/g,'a')
+    .replace(/é/g,'e').replace(/ê/g,'e').replace(/í/g,'i')
+    .replace(/ó/g,'o').replace(/ô/g,'o').replace(/ú/g,'u')
+    .replace(/ç/g,'c').replace(/\s+/g,'_');
   await db.from('leads').update({ status_kanban: novoStatus, atualizado_em: new Date().toISOString() }).eq('id', dragId);
   toast(`Lead movido para ${col.nome}`);
   await carregarLeads();
@@ -627,18 +640,19 @@ function abrirDetalhe(id) {
   const l = leads.find(x => x.id === id);
   if (!l) return;
   const c = l.candidaturas?.[0];
-  const col = colunas.find(col => {
-    if (col.score_minimo === -1) return l.status_kanban === 'aluno';
-    return l.score_total >= col.score_minimo && l.score_total <= col.score_maximo;
-  });
+  function colToSlugLocal(nome) {
+    return nome.toLowerCase()
+      .replace(/ã/g,'a').replace(/â/g,'a').replace(/á/g,'a')
+      .replace(/é/g,'e').replace(/ê/g,'e').replace(/í/g,'i')
+      .replace(/ó/g,'o').replace(/ô/g,'o').replace(/ú/g,'u')
+      .replace(/ç/g,'c').replace(/\s+/g,'_');
+  }
+  const col = colunas.find(col => colToSlugLocal(col.nome) === (l.status_kanban || 'lead_novo'));
 
   const linkPersonalizado = `mestrado.llew.com.br/investimento?w=${l.whatsapp}`;
 
   const moveGrid = colunas.map(col => {
-    const isCurrent = col.id === (colunas.find(c => {
-      if (c.score_minimo === -1) return l.status_kanban === 'aluno';
-      return l.score_total >= c.score_minimo && l.score_total <= c.score_maximo;
-    })?.id);
+    const isCurrent = colToSlugLocal(col.nome) === (l.status_kanban || 'lead_novo');
     return `<button class="move-btn ${isCurrent ? 'current' : ''}"
       style="border-color:${col.cor};color:${col.cor};${isCurrent ? 'background:'+col.cor+'20;' : ''}"
       onclick="moverLead('${l.id}','${col.id}','${col.nome}')">
@@ -686,7 +700,11 @@ function fecharDetalhe(e) {
 async function moverLead(leadId, colId, colNome) {
   const col = colunas.find(c => c.id === colId);
   if (!col) return;
-  const novoStatus = col.nome.toLowerCase().replace(/ã/g,'a').replace(/é/g,'e').replace(/ç/g,'c').replace(/ /g,'_');
+  const novoStatus = col.nome.toLowerCase()
+    .replace(/ã/g,'a').replace(/â/g,'a').replace(/á/g,'a')
+    .replace(/é/g,'e').replace(/ê/g,'e').replace(/í/g,'i')
+    .replace(/ó/g,'o').replace(/ô/g,'o').replace(/ú/g,'u')
+    .replace(/ç/g,'c').replace(/\s+/g,'_');
   await db.from('leads').update({ status_kanban: novoStatus, atualizado_em: new Date().toISOString() }).eq('id', leadId);
   document.getElementById('modal-detalhe').classList.remove('open');
   toast(`Lead movido para ${colNome}`);
