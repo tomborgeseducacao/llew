@@ -298,6 +298,37 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
 .loading-dot:nth-child(2) { animation-delay: 0.2s; }
 .loading-dot:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }
+
+/* ── ADMIN MODULE ── */
+.admin-card {
+  background:#fff;border:1px solid var(--borda);border-radius:12px;
+  padding:20px;cursor:pointer;transition:all 0.15s;
+}
+.admin-card:hover { box-shadow:0 4px 16px rgba(0,51,102,0.1);transform:translateY(-2px);border-color:#1a7fd4; }
+.admin-card-icon { font-size:28px;margin-bottom:10px; }
+.admin-card-title { font-size:14px;font-weight:600;color:var(--azul);margin-bottom:6px; }
+.admin-card-desc { font-size:12px;color:var(--suave);line-height:1.5;margin-bottom:12px; }
+.admin-card-btn { font-size:12px;font-weight:500;color:var(--azul-c); }
+.imp-step { flex:1;padding:14px;font-size:12px;font-weight:500;color:var(--suave);text-align:center;border-right:1px solid var(--borda);cursor:default; }
+.imp-step.active { color:var(--azul);background:#f0f7ff;font-weight:600; }
+.imp-step.done { color:#059669; }
+.imp-body { padding:24px; }
+.upload-zone { border:2px dashed var(--borda);border-radius:12px;padding:48px 24px;text-align:center;transition:all 0.15s;cursor:pointer; }
+.upload-zone.drag { border-color:var(--azul-c);background:#f0f7ff; }
+.upload-zone:hover { border-color:#94a3b8; }
+#preview-table th { padding:10px 12px;font-size:11px;font-weight:600;text-align:left;white-space:nowrap; }
+#preview-table td { padding:8px 12px;font-size:12px;border-bottom:1px solid var(--borda);white-space:nowrap; }
+#preview-table tbody tr:hover { background:#f8fafc; }
+.imp-stat { background:#fff;border:1px solid var(--borda);border-radius:8px;padding:12px 16px;text-align:center;min-width:100px; }
+.imp-stat-val { font-size:22px;font-weight:600;color:var(--azul); }
+.imp-stat-lbl { font-size:11px;color:var(--suave);margin-top:2px; }
+.imp-stat-val.ok { color:#059669; }
+.imp-stat-val.warn { color:#d97706; }
+.imp-stat-val.err { color:#dc2626; }
+.map-field { display:flex;flex-direction:column;gap:5px; }
+.map-field label { font-size:11px;font-weight:600;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px; }
+.map-field select { font-size:12px;padding:8px 10px;border-radius:7px;border:1px solid var(--borda);color:var(--texto);font-family:'DM Sans',sans-serif; }
+
 </style>
 </head>
 <body>
@@ -513,6 +544,125 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
         <div class="loading-dot"></div>
         <p style="margin-top:12px">Carregando templates...</p>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SEÇÃO ADMIN -->
+<div id="section-admin" style="display:none;margin-left:220px;min-height:100vh">
+  <div class="topbar" style="position:sticky;top:0;z-index:40">
+    <div style="display:flex;align-items:center;gap:12px;flex:1">
+      <span class="topbar-title">⚙ Administração <span style="font-size:12px;font-weight:400;color:#dc2626;margin-left:8px">Acesso restrito</span></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="sairAdmin()" style="color:#dc2626;border-color:#dc2626">🔒 Sair do Admin</button>
+    </div>
+  </div>
+  <div class="content" style="padding:24px 28px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px">
+      <div class="admin-card" onclick="mostrarImportador()">
+        <div class="admin-card-icon">📥</div>
+        <div class="admin-card-title">Importar Planilha</div>
+        <div class="admin-card-desc">Carregue CSV ou XLS com alunos/leads. Preview antes de confirmar. Normalização automática de telefone, status e programa.</div>
+        <div class="admin-card-btn">Abrir importador →</div>
+      </div>
+      <div class="admin-card" style="opacity:0.5;cursor:not-allowed">
+        <div class="admin-card-icon">👥</div>
+        <div class="admin-card-title">Gestão de Usuários</div>
+        <div class="admin-card-desc">Criar consultores, definir senhas e permissões por tenant.</div>
+        <div class="admin-card-btn" style="color:#94a3b8">Em breve</div>
+      </div>
+      <div class="admin-card" style="opacity:0.5;cursor:not-allowed">
+        <div class="admin-card-icon">🏢</div>
+        <div class="admin-card-title">Tenants / White Label</div>
+        <div class="admin-card-desc">Criar e configurar ambientes para outros consultores.</div>
+        <div class="admin-card-btn" style="color:#94a3b8">Em breve</div>
+      </div>
+    </div>
+
+    <!-- IMPORTADOR -->
+    <div id="painel-importador" style="display:none">
+      <div style="background:#fff;border:1px solid var(--borda);border-radius:12px;overflow:hidden">
+        <div style="display:flex;border-bottom:1px solid var(--borda)">
+          <div class="imp-step active" id="step-tab-1">① Carregar arquivo</div>
+          <div class="imp-step" id="step-tab-2">② Mapear colunas</div>
+          <div class="imp-step" id="step-tab-3">③ Preview & importar</div>
+          <div class="imp-step" id="step-tab-4">④ Resultado</div>
+        </div>
+        <!-- STEP 1 -->
+        <div id="step-1" class="imp-body">
+          <div class="upload-zone" id="upload-zone"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="onFileDrop(event)">
+            <div style="font-size:48px;margin-bottom:12px">📂</div>
+            <div style="font-size:15px;font-weight:500;color:var(--azul);margin-bottom:6px">Arraste o arquivo aqui</div>
+            <div style="font-size:13px;color:var(--suave);margin-bottom:16px">CSV ou XLS/XLSX — até 50MB</div>
+            <label class="btn btn-primary" style="cursor:pointer">
+              Selecionar arquivo
+              <input type="file" id="file-input" accept=".csv,.xls,.xlsx" style="display:none" onchange="carregarArquivo(this.files[0])">
+            </label>
+          </div>
+          <div id="file-info" style="display:none;padding:16px 24px;border-top:1px solid var(--borda);font-size:13px;color:var(--suave)"></div>
+        </div>
+        <!-- STEP 2 -->
+        <div id="step-2" class="imp-body" style="display:none">
+          <p style="font-size:13px;color:var(--suave);margin-bottom:16px">Associe cada coluna da planilha ao campo correto. Colunas não mapeadas serão ignoradas.</p>
+          <div id="mapa-colunas" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+          <div style="margin-top:20px;display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="irParaPreview()">Ver preview →</button>
+          </div>
+        </div>
+        <!-- STEP 3 -->
+        <div id="step-3" class="imp-body" style="display:none">
+          <div id="preview-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+          <div style="overflow-x:auto;max-height:400px;border:1px solid var(--borda);border-radius:8px">
+            <table id="preview-table" style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead id="preview-thead" style="background:var(--azul);color:#fff;position:sticky;top:0"></thead>
+              <tbody id="preview-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;padding:12px 16px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e">
+            ⚠ Duplicatas (mesmo WhatsApp já cadastrado) serão <strong>ignoradas</strong>. Registros sem nome serão descartados.
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn btn-outline" onclick="irParaStep(2)">← Voltar</button>
+            <button class="btn btn-primary" id="btn-importar" onclick="executarImportacao()">✓ Importar</button>
+          </div>
+        </div>
+        <!-- STEP 4 -->
+        <div id="step-4" class="imp-body" style="display:none">
+          <div id="resultado-importacao" style="text-align:center;padding:20px 0"></div>
+          <div id="erros-importacao" style="margin-top:16px"></div>
+          <div style="margin-top:20px;display:flex;gap:10px;justify-content:center">
+            <button class="btn btn-outline" onclick="novaImportacao()">Importar outro arquivo</button>
+            <button class="btn btn-primary" onclick="showSection('kanban')">Ver Kanban →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SENHA ADMIN -->
+<div class="modal-bg" id="modal-admin-senha">
+  <div class="modal" style="width:380px">
+    <div class="modal-header">
+      <h3>🔐 Acesso Admin</h3>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--suave);margin-bottom:16px">Digite a senha de administrador para continuar.</p>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="admin-senha-input" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter') verificarSenhaAdmin()">
+      </div>
+      <div id="admin-senha-erro" style="display:none;color:#dc2626;font-size:12px;margin-top:8px">❌ Senha incorreta.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="fecharModalAdmin()">Cancelar</button>
+      <button class="btn btn-primary" onclick="verificarSenhaAdmin()">Entrar</button>
     </div>
   </div>
 </div>
@@ -1132,6 +1282,377 @@ function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+
+// ============================================================
+// MÓDULO ADMIN — senha + importador de planilha
+// ============================================================
+const ADMIN_PIN = 'llew2026@';
+let adminLogado = false;
+let dadosPlanilha = [];
+let colunasPlanilha = [];
+let mapeamento = {};
+let linhasProcessadas = [];
+
+const CAMPOS_SISTEMA = [
+  { key:'nome',       label:'Nome',          obrig:true  },
+  { key:'whatsapp',   label:'WhatsApp',      obrig:false },
+  { key:'email',      label:'Email',         obrig:false },
+  { key:'cidade',     label:'Cidade',        obrig:false },
+  { key:'estado',     label:'Estado',        obrig:false },
+  { key:'consultor',  label:'Consultor',     obrig:false },
+  { key:'programa',   label:'Programa',      obrig:false },
+  { key:'turma',      label:'Turma (data)',  obrig:false },
+  { key:'status',     label:'Status',        obrig:false },
+  { key:'canal',      label:'Canal/Origem',  obrig:false },
+  { key:'receita',    label:'Receita Total', obrig:false },
+  { key:'base',       label:'Base',          obrig:false },
+  { key:'id_externo', label:'ID Externo',    obrig:false },
+];
+
+const STATUS_MAP = {
+  'active':'aluno_ativo','ativo':'aluno_ativo',
+  'concluido':'concluido','concluído':'concluido',
+  'cancelled':'concluido','cancelado':'concluido',
+  'lead':'lead_novo','matriculado':'aluno_matriculado',
+  'pre-matricula':'pre_matricula',
+};
+
+// ── ACESSO ──
+function abrirAdmin() {
+  if (adminLogado) { mostrarSecaoAdmin(); return; }
+  document.getElementById('modal-admin-senha').classList.add('open');
+  document.getElementById('admin-senha-input').value = '';
+  document.getElementById('admin-senha-erro').style.display = 'none';
+  setTimeout(() => document.getElementById('admin-senha-input').focus(), 150);
+}
+
+function verificarSenhaAdmin() {
+  const senha = document.getElementById('admin-senha-input').value;
+  if (senha === ADMIN_PIN) {
+    adminLogado = true;
+    document.getElementById('modal-admin-senha').classList.remove('open');
+    mostrarSecaoAdmin();
+  } else {
+    document.getElementById('admin-senha-erro').style.display = 'block';
+    document.getElementById('admin-senha-input').value = '';
+    document.getElementById('admin-senha-input').focus();
+  }
+}
+
+function fecharModalAdmin() {
+  document.getElementById('modal-admin-senha').classList.remove('open');
+}
+
+function mostrarSecaoAdmin() {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const secs = ['section-kanban','section-templates','section-admin'];
+  secs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === 'section-admin' ? '' : 'none';
+  });
+  // Ocultar o main padrão também
+  const main = document.querySelector('main.main');
+  if (main) main.style.display = 'none';
+  document.getElementById('section-admin').style.display = '';
+}
+
+function sairAdmin() {
+  adminLogado = false;
+  document.getElementById('section-admin').style.display = 'none';
+  const main = document.querySelector('main.main');
+  if (main) main.style.display = '';
+  showSection('kanban');
+}
+
+function mostrarImportador() {
+  document.getElementById('painel-importador').style.display = '';
+  irParaStep(1);
+}
+
+// ── STEPS ──
+function irParaStep(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = i === n ? '' : 'none';
+    const tab = document.getElementById('step-tab-' + i);
+    if (tab) tab.className = 'imp-step' + (i === n ? ' active' : i < n ? ' done' : '');
+  });
+}
+
+// ── CARREGAR ARQUIVO ──
+function onFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) carregarArquivo(file);
+}
+
+async function carregarArquivo(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const info = document.getElementById('file-info');
+  info.style.display = '';
+  info.innerHTML = '⟳ Lendo <strong>' + file.name + '</strong>...';
+  try {
+    if (ext === 'csv') {
+      const text = await file.text();
+      processarCSV(text, file.name);
+    } else if (ext === 'xls' || ext === 'xlsx') {
+      await processarXLS(file);
+    } else {
+      throw new Error('Use CSV ou XLS/XLSX');
+    }
+  } catch(e) {
+    info.innerHTML = '<span style="color:#dc2626">Erro: ' + e.message + '</span>';
+  }
+}
+
+function processarCSV(text, nome) {
+  const delim = (text.split(';').length > text.split(',').length) ? ';' : ',';
+  const linhas = text.split(/\r?\n/).filter(l => l.trim());
+  if (linhas.length < 2) throw new Error('Arquivo vazio');
+  colunasPlanilha = linhas[0].split(delim).map(c => c.replace(/"/g,'').trim());
+  dadosPlanilha = linhas.slice(1).map(l => {
+    const vals = l.split(delim).map(v => v.replace(/"/g,'').trim());
+    const obj = {};
+    colunasPlanilha.forEach((c,i) => obj[c] = vals[i] || '');
+    return obj;
+  }).filter(row => Object.values(row).some(v => v));
+  finalizarLeitura(nome);
+}
+
+async function processarXLS(file) {
+  if (!window.XLSX) {
+    await new Promise((res,rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res; s.onerror = () => rej(new Error('Falha ao carregar SheetJS'));
+      document.head.appendChild(s);
+    });
+  }
+  const buf = await file.arrayBuffer();
+  const wb  = XLSX.read(buf, { type:'array' });
+  const ws  = wb.Sheets[wb.SheetNames[0]];
+  const arr = XLSX.utils.sheet_to_json(ws, { defval:'' });
+  if (!arr.length) throw new Error('Planilha vazia');
+  colunasPlanilha = Object.keys(arr[0]);
+  dadosPlanilha   = arr;
+  finalizarLeitura(file.name);
+}
+
+function finalizarLeitura(nome) {
+  document.getElementById('file-info').innerHTML =
+    '✓ <strong>' + nome + '</strong> — ' + dadosPlanilha.length.toLocaleString('pt-BR') + ' registros · ' + colunasPlanilha.length + ' colunas';
+
+  // Auto-mapear
+  mapeamento = {};
+  const autoMap = {
+    nome:      ['nome','name','aluno','candidato'],
+    whatsapp:  ['telefone','phone','whatsapp','celular','tel','fone'],
+    email:     ['email','e-mail','mail'],
+    cidade:    ['cidade','city'],
+    estado:    ['estado','state','uf'],
+    consultor: ['consultor','advisor','vendedor'],
+    programa:  ['programa','program','curso'],
+    turma:     ['turma','turm','class','data','start'],
+    status:    ['status','situacao','situação'],
+    canal:     ['canal','channel','origem','source'],
+    receita:   ['receita','revenue','valor'],
+    base:      ['base'],
+    id_externo:['id','código','code','matricula'],
+  };
+
+  colunasPlanilha.forEach((col, idx) => {
+    const colN = col.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    CAMPOS_SISTEMA.forEach(campo => {
+      if (mapeamento[campo.key] !== undefined) return;
+      const palavras = autoMap[campo.key] || [];
+      if (palavras.some(p => colN.includes(p))) mapeamento[campo.key] = idx;
+    });
+  });
+
+  renderMapaColunas();
+  irParaStep(2);
+}
+
+function renderMapaColunas() {
+  const container = document.getElementById('mapa-colunas');
+  container.innerHTML = CAMPOS_SISTEMA.map(campo => {
+    const optsCol = '<option value="">— ignorar —</option>' +
+      colunasPlanilha.map((c,i) =>
+        '<option value="' + i + '"' + (mapeamento[campo.key] === i ? ' selected' : '') + '>' + c + '</option>'
+      ).join('');
+    return '<div class="map-field"><label>' + campo.label + (campo.obrig?' *':'') + '</label>' +
+      '<select onchange="mapeamento['' + campo.key + '']=this.value===''?undefined:parseInt(this.value)">' +
+      optsCol + '</select></div>';
+  }).join('');
+}
+
+// ── NORMALIZAÇÃO ──
+function normalizarTelefone(tel) {
+  if (!tel) return '';
+  let t = String(tel).replace(/[^\d]/g,'');
+  if (t.startsWith('55') && t.length >= 12) return t;
+  if (t.length === 11 || t.length === 10) return '55' + t;
+  return t;
+}
+
+function normalizarStatus(s) {
+  if (!s) return 'lead_novo';
+  const sn = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+  for (const [k,v] of Object.entries(STATUS_MAP)) {
+    const kn = k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+    if (sn.includes(kn)) return v;
+  }
+  return 'lead_novo';
+}
+
+function normalizarPrograma(prog) {
+  if (!prog || !programas.length) return null;
+  const pl = prog.toLowerCase().trim();
+  return (programas.find(p =>
+    pl.includes(p.nome.toLowerCase().substring(0,10)) ||
+    (pl.includes('healthcare') && p.nome.toLowerCase().includes('sa')) ||
+    (pl.includes('business administration') && p.nome.toLowerCase().includes('administra')) ||
+    (pl.includes('digital marketing') && p.nome.toLowerCase().includes('marketing')) ||
+    (pl.includes('international business') && p.nome.toLowerCase().includes('internacion')) ||
+    (pl.includes('business development') && p.nome.toLowerCase().includes('neg')) ||
+    (pl.includes('emergent technologies') && p.nome.toLowerCase().includes('tecnolog')) ||
+    (pl.includes('legal studies') && p.nome.toLowerCase().includes('jur')) ||
+    (pl.includes('organizational psychology') && p.nome.toLowerCase().includes('psicolog'))
+  ) || null)?.id || null;
+}
+
+function lerCampo(row, campo) {
+  const idx = mapeamento[campo];
+  if (idx === undefined || idx === null) return '';
+  const keys = Object.keys(row);
+  return String(row[keys[idx]] || '').trim();
+}
+
+// ── PREVIEW ──
+function irParaPreview() {
+  CAMPOS_SISTEMA.forEach(campo => {
+    const sel = document.querySelector('[onchange*="' + campo.key + '"]');
+    if (sel && sel.value !== '') mapeamento[campo.key] = parseInt(sel.value);
+  });
+
+  linhasProcessadas = dadosPlanilha.map((row, i) => {
+    const nome    = lerCampo(row,'nome');
+    const tel     = normalizarTelefone(lerCampo(row,'whatsapp'));
+    const email   = lerCampo(row,'email');
+    const cidade  = lerCampo(row,'cidade');
+    const estado  = lerCampo(row,'estado');
+    const prog    = lerCampo(row,'programa');
+    const status  = normalizarStatus(lerCampo(row,'status'));
+    const canal   = lerCampo(row,'canal');
+    const consul  = lerCampo(row,'consultor');
+    const progId  = normalizarPrograma(prog);
+    return { _linha:i+2, nome, whatsapp:tel, email, cidade, estado,
+             programa:prog, programa_id:progId, status, canal, consultor:consul,
+             sem_contato:!tel&&!email, valido:!!nome };
+  });
+
+  const total   = linhasProcessadas.length;
+  const validos = linhasProcessadas.filter(r=>r.valido).length;
+  const semC    = linhasProcessadas.filter(r=>r.sem_contato).length;
+  const inv     = linhasProcessadas.filter(r=>!r.valido).length;
+  const comP    = linhasProcessadas.filter(r=>r.programa_id).length;
+
+  document.getElementById('preview-stats').innerHTML =
+    '<div class="imp-stat"><div class="imp-stat-val">' + total.toLocaleString('pt-BR') + '</div><div class="imp-stat-lbl">Total</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val ok">' + validos.toLocaleString('pt-BR') + '</div><div class="imp-stat-lbl">Válidos</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val warn">' + semC.toLocaleString('pt-BR') + '</div><div class="imp-stat-lbl">Sem contato</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val">' + comP.toLocaleString('pt-BR') + '</div><div class="imp-stat-lbl">Com programa</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val err">' + inv.toLocaleString('pt-BR') + '</div><div class="imp-stat-lbl">Inválidos</div></div>';
+
+  const amostra = linhasProcessadas.filter(r=>r.valido).slice(0,50);
+  document.getElementById('preview-thead').innerHTML =
+    '<tr><th>#</th><th>Nome</th><th>WhatsApp</th><th>Email</th><th>Cidade/UF</th><th>Programa</th><th>Status</th><th>Consultor</th></tr>';
+  document.getElementById('preview-tbody').innerHTML = amostra.map(r =>
+    '<tr style="' + (r.sem_contato?'background:#fffbeb':'') + '">' +
+    '<td style="color:var(--suave)">' + r._linha + '</td>' +
+    '<td><strong>' + r.nome + '</strong></td>' +
+    '<td style="font-family:monospace;font-size:11px">' + (r.whatsapp||'<span style="color:#d97706">—</span>') + '</td>' +
+    '<td>' + (r.email||'—') + '</td>' +
+    '<td>' + ([r.cidade,r.estado].filter(Boolean).join(' / ')||'—') + '</td>' +
+    '<td style="color:' + (r.programa_id?'#059669':'#d97706') + ';font-size:11px">' + (r.programa_id?'✓ mapeado':(r.programa||'—')) + '</td>' +
+    '<td><span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#e0f2fe;color:#0369a1">' + r.status + '</span></td>' +
+    '<td style="font-size:11px;color:var(--suave)">' + (r.consultor||'—') + '</td>' +
+    '</tr>'
+  ).join('');
+
+  document.getElementById('btn-importar').textContent = '✓ Importar ' + validos.toLocaleString('pt-BR') + ' registros';
+  irParaStep(3);
+}
+
+// ── IMPORTAÇÃO ──
+async function executarImportacao() {
+  const btn = document.getElementById('btn-importar');
+  btn.disabled = true;
+  const validos = linhasProcessadas.filter(r=>r.valido);
+  const LOTE = 100;
+  let importados=0, ignorados=0, erros=[];
+
+  const { data:existentes } = await db.from('leads').select('whatsapp').eq('tenant_id',tenantId);
+  const wppSet = new Set((existentes||[]).map(e=>e.whatsapp).filter(Boolean));
+
+  for (let i=0; i<validos.length; i+=LOTE) {
+    const lote  = validos.slice(i,i+LOTE);
+    btn.textContent = '⟳ ' + Math.min(i+LOTE,validos.length).toLocaleString('pt-BR') + ' / ' + validos.length.toLocaleString('pt-BR');
+
+    const novos = lote.filter(r => !r.whatsapp || !wppSet.has(r.whatsapp));
+    ignorados += lote.length - novos.length;
+    if (!novos.length) continue;
+
+    const payload = novos.map(r => ({
+      tenant_id:tenantId, nome:r.nome,
+      whatsapp:r.whatsapp||null, email:r.email||null,
+      cidade:r.cidade||null, status_kanban:r.status,
+      origem:r.canal||null, score_total:0,
+      criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString()
+    }));
+
+    const { data:ins, error } = await db.from('leads').insert(payload).select('id');
+    if (error) { erros.push('Lote ' + (i/LOTE+1) + ': ' + error.message); continue; }
+
+    // Candidaturas para quem tem programa
+    const candPayload = (ins||[]).map((ins_r,idx) => {
+      const r = novos[idx];
+      if (!r.programa_id) return null;
+      return { tenant_id:tenantId, lead_id:ins_r.id, programa_id:r.programa_id,
+               status:r.status, criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString() };
+    }).filter(Boolean);
+    if (candPayload.length) await db.from('candidaturas').insert(candPayload);
+
+    importados += ins?.length||0;
+    novos.forEach(r => { if(r.whatsapp) wppSet.add(r.whatsapp); });
+  }
+
+  irParaStep(4);
+  document.getElementById('resultado-importacao').innerHTML =
+    '<div style="font-size:48px;margin-bottom:16px">' + (erros.length?'⚠':'✅') + '</div>' +
+    '<div style="font-size:22px;font-weight:600;color:var(--azul);margin-bottom:12px">Importação concluída!</div>' +
+    '<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">' +
+    '<div class="imp-stat"><div class="imp-stat-val ok">' + importados.toLocaleString('pt-BR') + '</div><div class="imp-stat-lbl">Importados</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val warn">' + ignorados.toLocaleString('pt-BR') + '</div><div class="imp-stat-lbl">Duplicatas ignoradas</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val err">' + erros.length + '</div><div class="imp-stat-lbl">Erros</div></div></div>';
+
+  if (erros.length) {
+    document.getElementById('erros-importacao').innerHTML =
+      '<details style="font-size:12px;color:#dc2626"><summary style="cursor:pointer">Ver erros (' + erros.length + ')</summary>' +
+      '<ul>' + erros.map(e=>'<li>'+e+'</li>').join('') + '</ul></details>';
+  }
+  toast('✓ ' + importados.toLocaleString('pt-BR') + ' leads importados!');
+}
+
+function novaImportacao() {
+  dadosPlanilha=[]; colunasPlanilha=[]; mapeamento={}; linhasProcessadas=[];
+  document.getElementById('file-info').style.display='none';
+  document.getElementById('file-input').value='';
+  irParaStep(1);
 }
 
 // ── TEMPLATES ──
