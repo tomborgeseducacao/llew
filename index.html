@@ -593,7 +593,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
               <th onclick="ordenarAlunos('nome')" style="cursor:pointer">Nome ↕</th>
               <th>WhatsApp</th>
               <th>Email</th>
-              <th>Cidade / UF</th>
+              <th>Cidade</th>
               <th onclick="ordenarAlunos('programa')" style="cursor:pointer">Programa ↕</th>
               <th>Turma</th>
               <th>Consultor</th>
@@ -1449,7 +1449,7 @@ async function carregarAlunos() {
   while (true) {
     const { data, error } = await db
       .from('leads')
-      .select(`id,nome,whatsapp,email,cidade,estado,status_kanban,
+      .select(`id,nome,whatsapp,email,cidade,status_kanban,
                consultor_nome,origem_convenio,turma_origem,score_total,
                candidaturas(programas(nome),turmas(nome))`)
       .eq('tenant_id', tenantId)
@@ -1570,7 +1570,7 @@ function renderAlunosTabela() {
     const wppBtn = a.whatsapp
       ? `<button class="aluno-wpp" onclick="event.stopPropagation();abrirWpp('${a.whatsapp}')">&#8599; ${a.whatsapp}</button>`
       : '<span style="color:var(--suave)">—</span>';
-    const loc = [a.cidade, a.estado].filter(Boolean).join(' / ') || '—';
+    const loc = (a.cidade || '—');
     return `<tr onclick="abrirDetalhe('${a.id}')">
       <td><strong>${a.nome || '—'}</strong></td>
       <td>${wppBtn}</td>
@@ -1652,7 +1652,7 @@ function exportarAlunos() {
   const cols = ['Nome','WhatsApp','Email','Cidade','Estado','Programa','Turma','Consultor','Convênio','Status'];
   const rows = alunosFiltrados.map(a => [
     a.nome||'', a.whatsapp||'', a.email||'',
-    a.cidade||'', a.estado||'',
+    a.cidade||'',
     a.candidaturas?.[0]?.programas?.nome||'',
     a.candidaturas?.[0]?.turmas?.nome||a.turma_origem||'',
     a.consultor_nome||'', a.origem_convenio||'',
