@@ -263,24 +263,32 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
 
 /* DEPLOY */
 .deploy-bar {
-  position: fixed; bottom: 24px; right: 24px; z-index: 300;
-  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
 .deploy-btn {
-  background: #059669; color: #fff; border: none; border-radius: 10px;
-  padding: 12px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-  font-family: 'DM Sans', sans-serif; box-shadow: 0 4px 16px rgba(5,150,105,0.35);
-  display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+  background: #059669; color: #fff; border: none; border-radius: 8px;
+  padding: 9px 14px; font-size: 12px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;
 }
-.deploy-btn:hover { background: #047857; transform: translateY(-1px); }
-.deploy-btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+.deploy-btn:hover { background: #047857; }
+.deploy-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.deploy-hist-btn {
+  background: #1a4d8c; color: #fff; border: none; border-radius: 8px;
+  padding: 7px 14px; font-size: 11px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-bottom: 6px; transition: all 0.2s;
+}
+.deploy-hist-btn:hover { background: #003366; }
 .deploy-status {
   background: #fff; border: 1px solid var(--borda); border-radius: 8px;
   padding: 8px 14px; font-size: 11px; color: var(--suave);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-width: 260px; text-align: right;
   display: none;
 }
-.deploy-status.show { display: block; }
+.deploy-status.show { display: block !important; }
 .deploy-status.ok { color: #059669; border-color: #059669; }
 .deploy-status.err { color: #dc2626; border-color: #dc2626; }
 
@@ -290,45 +298,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
 .loading-dot:nth-child(2) { animation-delay: 0.2s; }
 .loading-dot:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }
-
-/* ADMIN */
-.admin-card {
-  background:#fff;border:1px solid var(--borda);border-radius:12px;
-  padding:20px;cursor:pointer;transition:all 0.15s;
-}
-.admin-card:hover { box-shadow:0 4px 16px rgba(0,51,102,0.1);transform:translateY(-2px);border-color:#1a7fd4; }
-.admin-card-icon { font-size:28px;margin-bottom:10px; }
-.admin-card-title { font-size:14px;font-weight:600;color:var(--azul);margin-bottom:6px; }
-.admin-card-desc { font-size:12px;color:var(--suave);line-height:1.5;margin-bottom:12px; }
-.admin-card-btn { font-size:12px;font-weight:500;color:var(--azul-c); }
-
-/* IMPORTADOR */
-.imp-step {
-  flex:1;padding:14px;font-size:12px;font-weight:500;color:var(--suave);
-  text-align:center;border-right:1px solid var(--borda);cursor:default;
-}
-.imp-step.active { color:var(--azul);background:#f0f7ff;font-weight:600; }
-.imp-step.done { color:#059669; }
-.imp-body { padding:24px; }
-.upload-zone {
-  border:2px dashed var(--borda);border-radius:12px;padding:48px 24px;
-  text-align:center;transition:all 0.15s;cursor:pointer;
-}
-.upload-zone.drag { border-color:var(--azul-c);background:#f0f7ff; }
-.upload-zone:hover { border-color:#94a3b8; }
-table th { padding:10px 12px;font-size:11px;font-weight:600;text-align:left;white-space:nowrap; }
-table td { padding:8px 12px;font-size:12px;border-bottom:1px solid var(--borda);white-space:nowrap; }
-table tbody tr:hover { background:#f8fafc; }
-.imp-stat { background:#fff;border:1px solid var(--borda);border-radius:8px;padding:12px 16px;text-align:center;min-width:100px; }
-.imp-stat-val { font-size:22px;font-weight:600;color:var(--azul); }
-.imp-stat-lbl { font-size:11px;color:var(--suave);margin-top:2px; }
-.imp-stat-val.ok { color:#059669; }
-.imp-stat-val.warn { color:#d97706; }
-.imp-stat-val.err { color:#dc2626; }
-.map-field { display:flex;flex-direction:column;gap:5px; }
-.map-field label { font-size:11px;font-weight:600;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px; }
-.map-field select { font-size:12px;padding:8px 10px;border-radius:7px;border:1px solid var(--borda);color:var(--texto);font-family:'DM Sans',sans-serif; }
-
 </style>
 </head>
 <body>
@@ -353,8 +322,19 @@ table tbody tr:hover { background:#f8fafc; }
       <span class="nav-icon">⚙</span> Configurações
     </div>
   </nav>
-  <div style="padding:12px 0;border-top:1px solid rgba(255,255,255,0.08)">
-    <div class="nav-item" onclick="abrirAdmin()" style="color:rgba(255,200,100,0.85)">
+  <!-- DEPLOY BAR na sidebar -->
+  <div class="deploy-bar" id="deploy-bar-wrapper">
+    <div class="deploy-status" id="deploy-status" style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:4px;display:none"></div>
+    <button class="deploy-hist-btn" onclick="abrirHistorico()" title="Histórico / Rollback">
+      🕐 Histórico de versões
+    </button>
+    <button class="deploy-btn" id="deploy-btn" onclick="publicarNoGitHub()">
+      <span id="deploy-icon">↑</span>
+      <span id="deploy-label">Publicar em llew.com.br</span>
+    </button>
+  </div>
+  <div style="padding:8px 16px;border-top:1px solid rgba(255,255,255,0.08)">
+    <div class="nav-item" onclick="abrirAdmin()" style="color:rgba(255,200,100,0.85);padding:10px 4px">
       <span class="nav-icon">🔐</span> Admin
     </div>
   </div>
@@ -537,144 +517,6 @@ table tbody tr:hover { background:#f8fafc; }
   </div>
 </div>
 
-
-<!-- SEÇÃO ADMIN -->
-<div id="section-admin" style="display:none;margin-left:220px;min-height:100vh">
-  <div class="topbar" style="position:sticky;top:0;z-index:40">
-    <div style="display:flex;align-items:center;gap:12px;flex:1">
-      <span class="topbar-title">⚙ Administração <span style="font-size:12px;font-weight:400;color:#dc2626;margin-left:8px">Acesso restrito</span></span>
-    </div>
-    <div class="topbar-actions">
-      <button class="btn btn-outline" onclick="sairAdmin()" style="color:#dc2626;border-color:#dc2626">🔒 Sair do Admin</button>
-    </div>
-  </div>
-  <div class="content" style="padding:24px 28px">
-
-    <!-- CARDS DE MÓDULOS -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px">
-      <div class="admin-card" onclick="mostrarImportador()">
-        <div class="admin-card-icon">📥</div>
-        <div class="admin-card-title">Importar Planilha</div>
-        <div class="admin-card-desc">Carregue CSV ou XLS com alunos/leads. Preview antes de confirmar. Normalização automática de telefone, status e programa.</div>
-        <div class="admin-card-btn">Abrir importador →</div>
-      </div>
-      <div class="admin-card" style="opacity:0.5;cursor:not-allowed">
-        <div class="admin-card-icon">👥</div>
-        <div class="admin-card-title">Gestão de Usuários</div>
-        <div class="admin-card-desc">Criar consultores, definir senhas e permissões por tenant.</div>
-        <div class="admin-card-btn" style="color:#94a3b8">Em breve</div>
-      </div>
-      <div class="admin-card" style="opacity:0.5;cursor:not-allowed">
-        <div class="admin-card-icon">🏢</div>
-        <div class="admin-card-title">Tenants / White Label</div>
-        <div class="admin-card-desc">Criar e configurar ambientes para outros consultores.</div>
-        <div class="admin-card-btn" style="color:#94a3b8">Em breve</div>
-      </div>
-      <div class="admin-card" style="opacity:0.5;cursor:not-allowed">
-        <div class="admin-card-icon">📊</div>
-        <div class="admin-card-title">Relatórios Globais</div>
-        <div class="admin-card-desc">Métricas de todos os consultores e tenants.</div>
-        <div class="admin-card-btn" style="color:#94a3b8">Em breve</div>
-      </div>
-    </div>
-
-    <!-- IMPORTADOR -->
-    <div id="painel-importador" style="display:none">
-      <div style="background:#fff;border:1px solid var(--borda);border-radius:12px;overflow:hidden">
-
-        <!-- STEPS -->
-        <div style="display:flex;border-bottom:1px solid var(--borda)">
-          <div class="imp-step active" id="step-tab-1">① Carregar arquivo</div>
-          <div class="imp-step" id="step-tab-2">② Mapear colunas</div>
-          <div class="imp-step" id="step-tab-3">③ Preview & importar</div>
-          <div class="imp-step" id="step-tab-4">④ Resultado</div>
-        </div>
-
-        <!-- STEP 1 — UPLOAD -->
-        <div id="step-1" class="imp-body">
-          <div class="upload-zone" id="upload-zone"
-            ondragover="event.preventDefault();this.classList.add('drag')"
-            ondragleave="this.classList.remove('drag')"
-            ondrop="onFileDrop(event)">
-            <div style="font-size:48px;margin-bottom:12px">📂</div>
-            <div style="font-size:15px;font-weight:500;color:var(--azul);margin-bottom:6px">Arraste o arquivo aqui</div>
-            <div style="font-size:13px;color:var(--suave);margin-bottom:16px">CSV ou XLS/XLSX — até 50MB</div>
-            <label class="btn btn-primary" style="cursor:pointer">
-              Selecionar arquivo
-              <input type="file" id="file-input" accept=".csv,.xls,.xlsx" style="display:none" onchange="carregarArquivo(this.files[0])">
-            </label>
-          </div>
-          <div id="file-info" style="display:none;padding:16px 24px;border-top:1px solid var(--borda);font-size:13px;color:var(--suave)"></div>
-        </div>
-
-        <!-- STEP 2 — MAPEAR COLUNAS -->
-        <div id="step-2" class="imp-body" style="display:none">
-          <p style="font-size:13px;color:var(--suave);margin-bottom:16px">
-            Associe cada coluna da sua planilha ao campo correto do sistema. Colunas não mapeadas serão ignoradas.
-          </p>
-          <div id="mapa-colunas" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
-          <div style="margin-top:20px;display:flex;justify-content:flex-end">
-            <button class="btn btn-primary" onclick="irParaPreview()">Ver preview →</button>
-          </div>
-        </div>
-
-        <!-- STEP 3 — PREVIEW -->
-        <div id="step-3" class="imp-body" style="display:none">
-          <div id="preview-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
-          <div style="overflow-x:auto;max-height:420px;border:1px solid var(--borda);border-radius:8px">
-            <table id="preview-table" style="width:100%;border-collapse:collapse;font-size:12px">
-              <thead id="preview-thead" style="background:var(--azul);color:#fff;position:sticky;top:0"></thead>
-              <tbody id="preview-tbody"></tbody>
-            </table>
-          </div>
-          <div style="margin-top:16px;padding:12px 16px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e">
-            ⚠ Duplicatas (mesmo WhatsApp já cadastrado) serão <strong>ignoradas</strong> automaticamente. Registros sem WhatsApp e sem email serão marcados como <strong>sem contato</strong>.
-          </div>
-          <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
-            <button class="btn btn-outline" onclick="voltarStep(2)">← Voltar</button>
-            <button class="btn btn-primary" id="btn-importar" onclick="executarImportacao()">
-              ✓ Importar agora
-            </button>
-          </div>
-        </div>
-
-        <!-- STEP 4 — RESULTADO -->
-        <div id="step-4" class="imp-body" style="display:none">
-          <div id="resultado-importacao" style="text-align:center;padding:20px 0"></div>
-          <div id="erros-importacao" style="margin-top:16px"></div>
-          <div style="margin-top:20px;display:flex;gap:10px;justify-content:center">
-            <button class="btn btn-outline" onclick="novaImportacao()">Importar outro arquivo</button>
-            <button class="btn btn-primary" onclick="showSection('kanban')">Ver Kanban →</button>
-          </div>
-        </div>
-
-      </div>
-    </div><!-- fim painel-importador -->
-  </div>
-</div>
-
-<!-- MODAL SENHA ADMIN -->
-<div class="modal-bg" id="modal-admin-senha" onclick="">
-  <div class="modal" style="width:380px">
-    <div class="modal-header">
-      <h3>🔐 Acesso Admin</h3>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--suave);margin-bottom:16px">Digite a senha de administrador para continuar.</p>
-      <div class="form-group">
-        <label>Senha</label>
-        <input type="password" id="admin-senha-input" placeholder="••••••••"
-          onkeydown="if(event.key==='Enter') verificarSenhaAdmin()">
-      </div>
-      <div id="admin-senha-erro" style="display:none;color:#dc2626;font-size:12px;margin-top:8px">Senha incorreta. Tente novamente.</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="fecharModalAdmin()">Cancelar</button>
-      <button class="btn btn-primary" onclick="verificarSenhaAdmin()">Entrar</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL NOVO LEAD -->
 <div class="modal-bg" id="modal-novo" onclick="fecharModalNovo(event)">
   <div class="modal">
@@ -795,13 +637,6 @@ let dragId = null;
 
 // ── INIT ──
 async function init() {
-  // Reset botão deploy ao carregar
-  const _db = document.getElementById('deploy-btn');
-  const _di = document.getElementById('deploy-icon');
-  const _dl = document.getElementById('deploy-label');
-  const _ds = document.getElementById('deploy-status');
-  if(_db){_db.disabled=false;} if(_di){_di.textContent='↑';}
-  if(_dl){_dl.textContent='Publicar em llew.com.br';} if(_ds){_ds.className='deploy-status';_ds.textContent='';}
   const { data: t } = await db.from('tenants').select('id').eq('slug', TENANT_SLUG).single();
   if (!t) { document.getElementById('kanban').innerHTML = '<div class="loading"><p>Tenant não encontrado. Execute o SQL master primeiro.</p></div>'; return; }
   tenantId = t.id;
@@ -1299,483 +1134,6 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-
-// ============================================================
-// MÓDULO ADMIN
-// ============================================================
-const ADMIN_PIN = 'llew2026@'; // Senha do admin — altere aqui
-
-let adminLogado = false;
-let dadosPlanilha = [];     // linhas brutas do CSV/XLS
-let colunasPlanilha = [];   // cabeçalhos da planilha
-let mapeamento = {};        // { campo_sistema: indice_coluna }
-let linhasProcessadas = []; // após normalização
-
-// Mapa de campos do sistema disponíveis para mapeamento
-const CAMPOS_SISTEMA = [
-  { key: 'nome',      label: 'Nome',         obrig: true  },
-  { key: 'whatsapp',  label: 'WhatsApp',     obrig: false },
-  { key: 'email',     label: 'Email',        obrig: false },
-  { key: 'cidade',    label: 'Cidade',       obrig: false },
-  { key: 'estado',    label: 'Estado',       obrig: false },
-  { key: 'consultor', label: 'Consultor',    obrig: false },
-  { key: 'programa',  label: 'Programa',     obrig: false },
-  { key: 'turma',     label: 'Turma (data)', obrig: false },
-  { key: 'status',    label: 'Status',       obrig: false },
-  { key: 'canal',     label: 'Canal/Origem', obrig: false },
-  { key: 'receita',   label: 'Receita Total',obrig: false },
-  { key: 'base',      label: 'Base',         obrig: false },
-  { key: 'id_externo',label: 'ID Externo',   obrig: false },
-];
-
-// Mapa de programas: nome inglês → UUID do banco
-const PROG_MAP = {
-  'master of science in healthcare management':            programas.find ? null : 'map_depois',
-  'master of science in business administration':          null,
-  'master of science in digital marketing':                null,
-  'master of science in international business':           null,
-  'master of science in business development and innovation': null,
-  'master of science in emergent technologies in education': null,
-  'master of science in legal studies emphasis in international law': null,
-  'master of science in organizational psychology':        null,
-};
-
-// Mapa de status planilha → status_kanban
-const STATUS_MAP = {
-  'active':          'aluno_ativo',
-  'ativo':           'aluno_ativo',
-  'concluído':       'concluido',
-  'concluido':       'concluido',
-  'cancelled':       'concluido',
-  'cancelado':       'concluido',
-  'lead':            'lead_novo',
-  'matriculado':     'aluno_matriculado',
-  'pre-matricula':   'pre_matricula',
-  'pré-matrícula':   'pre_matricula',
-};
-
-function abrirAdmin() {
-  if (adminLogado) {
-    mostrarSecaoAdmin();
-    return;
-  }
-  document.getElementById('modal-admin-senha').classList.add('open');
-  document.getElementById('admin-senha-input').value = '';
-  document.getElementById('admin-senha-erro').style.display = 'none';
-  setTimeout(() => document.getElementById('admin-senha-input').focus(), 100);
-}
-
-function verificarSenhaAdmin() {
-  const senha = document.getElementById('admin-senha-input').value;
-  if (senha === ADMIN_PIN) {
-    adminLogado = true;
-    document.getElementById('modal-admin-senha').classList.remove('open');
-    mostrarSecaoAdmin();
-  } else {
-    document.getElementById('admin-senha-erro').style.display = 'block';
-    document.getElementById('admin-senha-input').value = '';
-    document.getElementById('admin-senha-input').focus();
-  }
-}
-
-function fecharModalAdmin() {
-  document.getElementById('modal-admin-senha').classList.remove('open');
-}
-
-function mostrarSecaoAdmin() {
-  // Esconde todas as seções
-  document.getElementById('section-kanban').style.display = 'none';
-  document.getElementById('section-templates').style.display = 'none';
-  document.getElementById('section-admin').style.display = '';
-  // Remove active de todos os nav-items
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-}
-
-function sairAdmin() {
-  adminLogado = false;
-  document.getElementById('section-admin').style.display = 'none';
-  showSection('kanban');
-}
-
-function mostrarImportador() {
-  document.getElementById('painel-importador').style.display = '';
-  irParaStep(1);
-}
-
-// ── STEPS ──
-function irParaStep(n) {
-  [1,2,3,4].forEach(i => {
-    document.getElementById('step-' + i).style.display = i === n ? '' : 'none';
-    const tab = document.getElementById('step-tab-' + i);
-    tab.className = 'imp-step' + (i === n ? ' active' : i < n ? ' done' : '');
-  });
-}
-
-function voltarStep(n) { irParaStep(n); }
-
-// ── CARREGAR ARQUIVO ──
-function onFileDrop(e) {
-  e.preventDefault();
-  document.getElementById('upload-zone').classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file) carregarArquivo(file);
-}
-
-async function carregarArquivo(file) {
-  if (!file) return;
-  const ext = file.name.split('.').pop().toLowerCase();
-
-  document.getElementById('file-info').style.display = '';
-  document.getElementById('file-info').innerHTML = `⟳ Lendo <strong>${file.name}</strong>...`;
-
-  try {
-    if (ext === 'csv') {
-      const text = await file.text();
-      processarCSV(text, file.name);
-    } else if (ext === 'xls' || ext === 'xlsx') {
-      await processarXLS(file);
-    } else {
-      throw new Error('Formato não suportado. Use CSV ou XLS/XLSX.');
-    }
-  } catch(e) {
-    document.getElementById('file-info').innerHTML = `<span style="color:#dc2626">Erro: ${e.message}</span>`;
-  }
-}
-
-function processarCSV(text, nome) {
-  // Detectar delimitador
-  const delim = text.indexOf(';') > text.indexOf(',') ? ';' : ',';
-  const linhas = text.split(/\r?\n/).filter(l => l.trim());
-  if (linhas.length < 2) throw new Error('Arquivo vazio ou sem dados');
-
-  colunasPlanilha = linhas[0].split(delim).map(c => c.replace(/"/g,'').trim());
-  dadosPlanilha = linhas.slice(1).map(l => {
-    const vals = l.split(delim).map(v => v.replace(/"/g,'').trim());
-    const obj = {};
-    colunasPlanilha.forEach((c,i) => obj[c] = vals[i] || '');
-    return obj;
-  }).filter(row => Object.values(row).some(v => v));
-
-  finalizarLeitura(nome);
-}
-
-async function processarXLS(file) {
-  // Usa SheetJS via CDN
-  if (!window.XLSX) {
-    await carregarSheetJS();
-  }
-  const buf = await file.arrayBuffer();
-  const wb  = XLSX.read(buf, { type: 'array' });
-  const ws  = wb.Sheets[wb.SheetNames[0]];
-  const arr = XLSX.utils.sheet_to_json(ws, { defval: '' });
-
-  if (!arr.length) throw new Error('Planilha vazia');
-  colunasPlanilha = Object.keys(arr[0]);
-  dadosPlanilha   = arr;
-  finalizarLeitura(file.name);
-}
-
-function carregarSheetJS() {
-  return new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = res; s.onerror = () => rej(new Error('Falha ao carregar SheetJS'));
-    document.head.appendChild(s);
-  });
-}
-
-function finalizarLeitura(nome) {
-  document.getElementById('file-info').innerHTML =
-    `✓ <strong>${nome}</strong> — ${dadosPlanilha.length.toLocaleString('pt-BR')} registros · ${colunasPlanilha.length} colunas`;
-
-  // Auto-mapear colunas por similaridade de nome
-  mapeamento = {};
-  const autoMap = {
-    'nome':       ['nome','name','aluno','candidato'],
-    'whatsapp':   ['telefone','phone','whatsapp','celular','tel','fone'],
-    'email':      ['email','e-mail','mail'],
-    'cidade':     ['cidade','city'],
-    'estado':     ['estado','state','uf'],
-    'consultor':  ['consultor','advisor','vendedor','agent'],
-    'programa':   ['programa','program','curso','course'],
-    'turma':      ['turma','turm','class','data','start'],
-    'status':     ['status','situacao','situação'],
-    'canal':      ['canal','channel','origem','source'],
-    'receita':    ['receita','revenue','valor','value'],
-    'base':       ['base'],
-    'id_externo': ['id','código','code','matricula','matrícula'],
-  };
-
-  colunasPlanilha.forEach((col, idx) => {
-    const colLower = col.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    CAMPOS_SISTEMA.forEach(campo => {
-      if (mapeamento[campo.key] !== undefined) return;
-      const palavras = autoMap[campo.key] || [];
-      if (palavras.some(p => colLower.includes(p))) {
-        mapeamento[campo.key] = idx;
-      }
-    });
-  });
-
-  renderMapaColunas();
-  irParaStep(2);
-}
-
-function renderMapaColunas() {
-  const container = document.getElementById('mapa-colunas');
-  const optsCol = `<option value="">— ignorar —</option>` +
-    colunasPlanilha.map((c,i) => `<option value="${i}">${c}</option>`).join('');
-
-  container.innerHTML = CAMPOS_SISTEMA.map(campo => `
-    <div class="map-field">
-      <label>${campo.label}${campo.obrig ? ' *' : ''}</label>
-      <select id="map-${campo.key}" onchange="mapeamento['${campo.key}']=this.value===''?undefined:parseInt(this.value)">
-        ${optsCol.replace(
-          `value="${mapeamento[campo.key] !== undefined ? mapeamento[campo.key] : ''}"`,
-          `value="${mapeamento[campo.key] !== undefined ? mapeamento[campo.key] : ''}" selected`
-        )}
-      </select>
-    </div>`).join('');
-
-  // Aplicar mapeamento automático nos selects
-  CAMPOS_SISTEMA.forEach(campo => {
-    const sel = document.getElementById('map-' + campo.key);
-    if (sel && mapeamento[campo.key] !== undefined) {
-      sel.value = mapeamento[campo.key];
-    }
-  });
-}
-
-// ── NORMALIZAÇÃO ──
-function normalizarTelefone(tel) {
-  if (!tel) return '';
-  let t = String(tel).replace(/[^\d]/g,'');
-  // Remove zeros à esquerda extras, garante formato 55XXXXXXXXXXX
-  if (t.startsWith('55') && t.length >= 12) return t;
-  if (t.length === 11 || t.length === 10) return '55' + t;
-  if (t.length > 11) return t; // deixa como está
-  return t;
-}
-
-function normalizarStatus(status) {
-  if (!status) return 'lead_novo';
-  const s = status.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
-  for (const [k,v] of Object.entries(STATUS_MAP)) {
-    const kn = k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
-    if (s.includes(kn)) return v;
-  }
-  return 'lead_novo';
-}
-
-function normalizarPrograma(prog) {
-  if (!prog) return null;
-  const pl = prog.toLowerCase().trim();
-  // Busca por correspondência parcial nos programas carregados
-  const match = programas.find(p =>
-    pl.includes(p.nome.toLowerCase()) ||
-    p.nome.toLowerCase().includes(pl.substring(0,15)) ||
-    // Mapa inglês → português
-    (pl.includes('healthcare') && p.nome.toLowerCase().includes('saúde')) ||
-    (pl.includes('business administration') && p.nome.toLowerCase().includes('administração')) ||
-    (pl.includes('digital marketing') && p.nome.toLowerCase().includes('marketing')) ||
-    (pl.includes('international business') && p.nome.toLowerCase().includes('internacionais')) ||
-    (pl.includes('business development') && p.nome.toLowerCase().includes('negócios')) ||
-    (pl.includes('emergent technologies') && p.nome.toLowerCase().includes('tecnologias')) ||
-    (pl.includes('legal studies') && p.nome.toLowerCase().includes('jurídicos')) ||
-    (pl.includes('organizational psychology') && p.nome.toLowerCase().includes('psicologia'))
-  );
-  return match ? match.id : null;
-}
-
-function lerCampo(row, campo) {
-  const idx = mapeamento[campo];
-  if (idx === undefined || idx === null) return '';
-  const keys = Object.keys(row);
-  return idx < keys.length ? (row[keys[idx]] || '') : '';
-}
-
-// ── PREVIEW ──
-function irParaPreview() {
-  // Ler mapeamento atual dos selects
-  CAMPOS_SISTEMA.forEach(campo => {
-    const sel = document.getElementById('map-' + campo.key);
-    if (sel) mapeamento[campo.key] = sel.value === '' ? undefined : parseInt(sel.value);
-  });
-
-  // Processar linhas
-  linhasProcessadas = dadosPlanilha.map((row, i) => {
-    const nome     = lerCampo(row, 'nome').trim();
-    const tel      = normalizarTelefone(lerCampo(row, 'whatsapp'));
-    const email    = lerCampo(row, 'email').trim();
-    const cidade   = lerCampo(row, 'cidade').trim();
-    const estado   = lerCampo(row, 'estado').trim();
-    const consultor= lerCampo(row, 'consultor').trim();
-    const programa = lerCampo(row, 'programa').trim();
-    const status   = lerCampo(row, 'status').trim();
-    const canal    = lerCampo(row, 'canal').trim();
-    const base     = lerCampo(row, 'base').trim();
-    const idExt    = lerCampo(row, 'id_externo').trim();
-
-    const statusNorm   = normalizarStatus(status);
-    const programaId   = normalizarPrograma(programa);
-    const semContato   = !tel && !email;
-
-    return {
-      _linha: i + 2,
-      nome, whatsapp: tel, email, cidade, estado,
-      consultor, programa, programa_id: programaId,
-      status: statusNorm, status_original: status,
-      canal, base, id_externo: idExt,
-      sem_contato: semContato,
-      valido: !!nome,
-    };
-  });
-
-  const total    = linhasProcessadas.length;
-  const validos  = linhasProcessadas.filter(r => r.valido).length;
-  const semCtato = linhasProcessadas.filter(r => r.sem_contato).length;
-  const invalidos= linhasProcessadas.filter(r => !r.valido).length;
-  const comProg  = linhasProcessadas.filter(r => r.programa_id).length;
-
-  document.getElementById('preview-stats').innerHTML = `
-    <div class="imp-stat"><div class="imp-stat-val">${total.toLocaleString('pt-BR')}</div><div class="imp-stat-lbl">Total</div></div>
-    <div class="imp-stat"><div class="imp-stat-val ok">${validos.toLocaleString('pt-BR')}</div><div class="imp-stat-lbl">Válidos</div></div>
-    <div class="imp-stat"><div class="imp-stat-val warn">${semCtato.toLocaleString('pt-BR')}</div><div class="imp-stat-lbl">Sem contato</div></div>
-    <div class="imp-stat"><div class="imp-stat-val">${comProg.toLocaleString('pt-BR')}</div><div class="imp-stat-lbl">Com programa</div></div>
-    <div class="imp-stat"><div class="imp-stat-val err">${invalidos.toLocaleString('pt-BR')}</div><div class="imp-stat-lbl">Inválidos</div></div>
-  `;
-
-  // Mostrar preview das primeiras 50 linhas
-  const amostra = linhasProcessadas.filter(r => r.valido).slice(0, 50);
-  document.getElementById('preview-thead').innerHTML =
-    '<tr><th>#</th><th>Nome</th><th>WhatsApp</th><th>Email</th><th>Cidade/UF</th><th>Programa</th><th>Status</th><th>Consultor</th></tr>';
-  document.getElementById('preview-tbody').innerHTML = amostra.map((r,i) => `
-    <tr style="${r.sem_contato ? 'background:#fffbeb' : ''}">
-      <td style="color:var(--suave)">${r._linha}</td>
-      <td><strong>${r.nome}</strong></td>
-      <td style="font-family:monospace;font-size:11px">${r.whatsapp || '<span style="color:#d97706">—</span>'}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${r.email || '—'}</td>
-      <td>${[r.cidade,r.estado].filter(Boolean).join(' / ') || '—'}</td>
-      <td style="color:${r.programa_id ? '#059669' : '#d97706'};font-size:11px">${r.programa_id ? '✓ mapeado' : (r.programa || '—')}</td>
-      <td><span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#e0f2fe;color:#0369a1">${r.status}</span></td>
-      <td style="font-size:11px;color:var(--suave)">${r.consultor || '—'}</td>
-    </tr>`).join('');
-
-  document.getElementById('btn-importar').textContent = `✓ Importar ${validos.toLocaleString('pt-BR')} registros`;
-  irParaStep(3);
-}
-
-// ── IMPORTAÇÃO ──
-async function executarImportacao() {
-  const btn = document.getElementById('btn-importar');
-  btn.disabled = true;
-  btn.textContent = '⟳ Importando...';
-
-  const validos = linhasProcessadas.filter(r => r.valido);
-  const LOTE = 100; // importar em lotes de 100
-  let importados = 0;
-  let ignorados  = 0;
-  let erros      = [];
-
-  // Buscar WhatsApps já existentes para deduplicação
-  const { data: existentes } = await db
-    .from('leads')
-    .select('whatsapp')
-    .eq('tenant_id', tenantId);
-  const wppExistentes = new Set((existentes || []).map(e => e.whatsapp));
-
-  for (let i = 0; i < validos.length; i += LOTE) {
-    const lote = validos.slice(i, i + LOTE);
-    btn.textContent = `⟳ Importando... ${Math.min(i+LOTE, validos.length).toLocaleString('pt-BR')} / ${validos.length.toLocaleString('pt-BR')}`;
-
-    const novos = lote.filter(r => !r.whatsapp || !wppExistentes.has(r.whatsapp));
-    ignorados += lote.length - novos.length;
-
-    if (!novos.length) continue;
-
-    const payload = novos.map(r => ({
-      tenant_id:     tenantId,
-      nome:          r.nome,
-      whatsapp:      r.whatsapp || null,
-      email:         r.email    || null,
-      cidade:        r.cidade   || null,
-      status_kanban: r.status,
-      origem:        r.canal    || null,
-      score_total:   0,
-      atualizado_em: new Date().toISOString(),
-      criado_em:     new Date().toISOString(),
-    }));
-
-    const { data: inseridos, error } = await db
-      .from('leads')
-      .insert(payload)
-      .select('id');
-
-    if (error) {
-      erros.push(`Lote ${i/LOTE+1}: ${error.message}`);
-      continue;
-    }
-
-    // Inserir candidaturas para os que têm programa
-    const comPrograma = novos.filter(r => r.programa_id);
-    if (comPrograma.length && inseridos) {
-      const candPayload = inseridos
-        .map((ins, idx) => {
-          const r = novos[idx];
-          if (!r.programa_id) return null;
-          return {
-            tenant_id:  tenantId,
-            lead_id:    ins.id,
-            programa_id: r.programa_id,
-            status:     r.status,
-            criado_em:  new Date().toISOString(),
-            atualizado_em: new Date().toISOString(),
-          };
-        })
-        .filter(Boolean);
-
-      if (candPayload.length) {
-        await db.from('candidaturas').insert(candPayload);
-      }
-    }
-
-    importados += inseridos?.length || 0;
-    novos.forEach(r => { if (r.whatsapp) wppExistentes.add(r.whatsapp); });
-  }
-
-  // Resultado
-  irParaStep(4);
-  document.getElementById('resultado-importacao').innerHTML = `
-    <div style="font-size:48px;margin-bottom:16px">${erros.length ? '⚠' : '✅'}</div>
-    <div style="font-size:22px;font-weight:600;color:var(--azul);margin-bottom:12px">Importação concluída!</div>
-    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-      <div class="imp-stat"><div class="imp-stat-val ok">${importados.toLocaleString('pt-BR')}</div><div class="imp-stat-lbl">Importados</div></div>
-      <div class="imp-stat"><div class="imp-stat-val warn">${ignorados.toLocaleString('pt-BR')}</div><div class="imp-stat-lbl">Duplicatas ignoradas</div></div>
-      <div class="imp-stat"><div class="imp-stat-val err">${erros.length}</div><div class="imp-stat-lbl">Erros</div></div>
-    </div>`;
-
-  if (erros.length) {
-    document.getElementById('erros-importacao').innerHTML = `
-      <details style="font-size:12px;color:#dc2626">
-        <summary style="cursor:pointer;font-weight:500">Ver erros (${erros.length})</summary>
-        <ul style="margin-top:8px;padding-left:16px">${erros.map(e => `<li>${e}</li>`).join('')}</ul>
-      </details>`;
-  }
-
-  toast(`✓ ${importados.toLocaleString('pt-BR')} leads importados com sucesso!`);
-}
-
-function novaImportacao() {
-  dadosPlanilha = [];
-  colunasPlanilha = [];
-  mapeamento = {};
-  linhasProcessadas = [];
-  document.getElementById('file-info').style.display = 'none';
-  document.getElementById('file-input').value = '';
-  irParaStep(1);
-}
-
-
 // ── TEMPLATES ──
 let todosTemplates = [];
 let catAtiva = 'todos';
@@ -2002,18 +1360,7 @@ init();
   </div>
 </div>
 
-<!-- DEPLOY BAR -->
-<div class="deploy-bar">
-  <div class="deploy-status" id="deploy-status"></div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button class="deploy-btn" id="deploy-hist-btn" onclick="abrirHistorico()"
-      style="background:#1a4d8c;padding:12px 14px" title="Histórico / Rollback">🕐</button>
-    <button class="deploy-btn" id="deploy-btn" onclick="publicarNoGitHub()">
-      <span id="deploy-icon">↑</span>
-      <span id="deploy-label">Publicar em llew.com.br</span>
-    </button>
-  </div>
-</div>
+<!-- deploy bar movida para sidebar -->
 
 <script>
 const GH_USER   = 'tomborgeseducacao';
