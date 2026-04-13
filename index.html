@@ -2134,7 +2134,6 @@ async function executarImportacao() {
     const payload = novos.map(r => ({
       tenant_id:tenantId, nome:r.nome, whatsapp:r.whatsapp||null,
       email:r.email||null, cidade:r.cidade||null, status_kanban:r.status,
-      origem:r.canal||null,
       origem_convenio:r.convenio||null,
       turma_origem:r.turma_raw||null,
       consultor_nome:r.consultor||null,
