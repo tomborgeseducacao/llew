@@ -1,0 +1,2182 @@
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLEW CRM — Painel de Leads</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&amp;family=DM+Sans:wght@300;400;500&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --azul: #003366;
+  --azul-m: #1a4d8c;
+  --azul-c: #1a7fd4;
+  --cinza: #f4f7fb;
+  --borda: #e2e8f0;
+  --texto: #1a1a2e;
+  --suave: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(--texto); }
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+  background: var(--azul); display: flex; flex-direction: column;
+  z-index: 50;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-logo h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; color: #fff; letter-spacing: 1px;
+}
+.sidebar-logo span { color: #1a7fd4; }
+.sidebar-logo p { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 16px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 20px; font-size: 13px; color: rgba(255,255,255,0.65);
+  cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent;
+}
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.nav-item.active { color: #fff; background: rgba(255,255,255,0.1); border-left-color: #1a7fd4; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-user {
+  padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 12px; color: rgba(255,255,255,0.5);
+}
+.sidebar-user strong { display: block; color: rgba(255,255,255,0.85); font-weight: 500; }
+
+/* MAIN */
+.main { margin-left: 220px; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  background: #fff; border-bottom: 1px solid var(--borda);
+  padding: 14px 28px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 40;
+}
+.topbar-title { font-size: 16px; font-weight: 500; color: var(--azul); }
+.topbar-title span { font-size: 12px; font-weight: 400; color: var(--suave); margin-left: 8px; }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+.btn { font-size: 12px; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.15s; border: none; }
+.btn-primary { background: var(--azul); color: #fff; }
+.btn-primary:hover { background: var(--azul-m); }
+.btn-outline { background: #fff; color: var(--azul); border: 1px solid var(--borda); }
+.btn-outline:hover { border-color: var(--azul); }
+
+/* CONTENT */
+.content { padding: 24px 28px; }
+
+/* STATS */
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: #fff; border-radius: 10px; border: 1px solid var(--borda);
+  padding: 18px 20px;
+}
+.stat-label { font-size: 11px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.stat-val { font-size: 28px; font-weight: 500; color: var(--azul); line-height: 1; }
+.stat-sub { font-size: 11px; color: var(--suave); margin-top: 4px; }
+.stat-val.hot { color: #dc2626; }
+.stat-val.ok { color: #059669; }
+
+/* FILTROS */
+.filtros {
+  background: #fff; border: 1px solid var(--borda); border-radius: 10px;
+  padding: 14px 20px; margin-bottom: 20px;
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.filtros input, .filtros select {
+  font-size: 12px; padding: 7px 12px; border-radius: 6px;
+  border: 1px solid var(--borda); color: var(--texto);
+  background: #fff; font-family: 'DM Sans', sans-serif;
+}
+.filtros input { flex: 1; min-width: 200px; }
+.filtros input:focus, .filtros select:focus { outline: none; border-color: var(--azul-c); }
+
+/* KANBAN */
+.kanban { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 16px; align-items: flex-start; }
+.col { flex: 0 0 220px; }
+.col-header {
+  border-radius: 8px; padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.col-name { font-size: 12px; font-weight: 500; }
+.col-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.col-cards { display: flex; flex-direction: column; gap: 8px; min-height: 80px; }
+.card {
+  background: #fff; border: 1px solid var(--borda); border-radius: 10px;
+  padding: 12px; cursor: pointer; transition: all 0.15s;
+  draggable: true;
+}
+.card:hover { box-shadow: 0 4px 12px rgba(0,51,102,0.1); transform: translateY(-1px); }
+.card.dragging { opacity: 0.4; }
+.card-name { font-size: 13px; font-weight: 500; color: var(--texto); margin-bottom: 3px; }
+.card-prog { font-size: 11px; color: var(--suave); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-score-bar { height: 3px; background: var(--borda); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+.card-score-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+.card-foot { display: flex; align-items: center; justify-content: space-between; }
+.card-wpp { font-size: 11px; color: #059669; font-weight: 500; cursor: pointer; background: none; border: none; padding: 0; font-family: inherit; }
+.card-pts { font-size: 11px; font-weight: 500; }
+.card-days { font-size: 10px; color: var(--suave); }
+.card-days.warn { color: #d97706; }
+.card-days.danger { color: #dc2626; }
+.doc-badge { font-size: 10px; padding: 2px 6px; border-radius: 5px; font-weight: 500; margin-bottom: 6px; display: inline-block; }
+.col-empty { font-size: 11px; color: var(--suave); text-align: center; padding: 20px 0; border: 1px dashed var(--borda); border-radius: 8px; }
+.col-drop-zone { min-height: 60px; border-radius: 8px; transition: background 0.15s; }
+.col-drop-zone.drag-over { background: rgba(26,127,212,0.08); outline: 2px dashed #1a7fd4; }
+
+/* MODAL LEAD */
+.modal-bg {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 200; align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 12px; width: 520px; max-width: 95vw;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--borda);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h3 { font-size: 16px; font-weight: 500; color: var(--azul); }
+.modal-close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--suave); }
+.modal-body { padding: 20px 24px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.form-row.full { grid-template-columns: 1fr; }
+.form-group label { font-size: 11px; font-weight: 500; color: var(--suave); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 5px; }
+.form-group input, .form-group select {
+  width: 100%; font-size: 13px; padding: 9px 12px; border-radius: 7px;
+  border: 1px solid var(--borda); color: var(--texto);
+  font-family: 'DM Sans', sans-serif; transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--azul-c); }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--borda); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* MODAL DETALHE LEAD */
+.detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--borda); font-size: 13px; }
+.detail-label { color: var(--suave); }
+.detail-val { font-weight: 500; color: var(--texto); text-align: right; max-width: 60%; }
+.move-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin: 14px 0; }
+.move-btn { padding: 8px 6px; border-radius: 7px; font-size: 11px; font-weight: 500; cursor: pointer; text-align: center; border: 1px solid; transition: opacity 0.15s; font-family: 'DM Sans', sans-serif; }
+.move-btn.current { opacity: 0.4; cursor: not-allowed; }
+.move-btn:hover:not(.current) { opacity: 0.8; }
+
+/* LINK COPY */
+.link-box {
+  background: var(--cinza); border-radius: 7px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px; margin-top: 14px;
+}
+.link-box code { font-size: 11px; color: var(--azul-m); flex: 1; word-break: break-all; font-family: monospace; }
+.link-copy { background: var(--azul); color: #fff; border: none; border-radius: 5px; padding: 5px 12px; font-size: 11px; cursor: pointer; white-space: nowrap; font-family: 'DM Sans', sans-serif; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(40px);
+  background: var(--azul); color: #fff; padding: 10px 20px;
+  border-radius: 8px; font-size: 13px; opacity: 0;
+  transition: all 0.3s; z-index: 999; white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* TEMPLATES */
+.tpl-section { display: none; }
+.tpl-section.active { display: block; }
+.tpl-grid { display: flex; flex-direction: column; gap: 4px; }
+.tpl-card {
+  background: #fff; border: 1px solid var(--borda); border-radius: 8px;
+  padding: 8px 14px; transition: all 0.15s;
+  display: grid; grid-template-columns: 100px 1fr auto; gap: 10px; align-items: center;
+}
+.tpl-card:hover { box-shadow: 0 2px 8px rgba(0,51,102,0.07); border-color: #cbd5e1; }
+.tpl-card.inativo { opacity: 0.45; }
+.tpl-trigger {
+  font-size: 11px; font-weight: 500; color: var(--azul);
+  background: #e6f1fb; padding: 3px 8px; border-radius: 5px;
+  font-family: monospace; text-align: center; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.tpl-preview { font-size: 12px; color: var(--suave); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpl-preview strong { color: var(--texto); font-weight: 500; font-family: 'DM Sans', sans-serif; font-size: 12px; margin-right: 6px; }
+.tpl-actions { display: flex; gap: 6px; align-items: center; }
+.tpl-toggle {
+  font-size: 11px; padding: 4px 10px; border-radius: 5px; cursor: pointer;
+  border: 1px solid; font-family: 'DM Sans', sans-serif; font-weight: 500;
+  white-space: nowrap; transition: all 0.15s;
+}
+.tpl-toggle.ativo { border-color: #059669; color: #059669; background: #d1fae5; }
+.tpl-toggle.inativo { border-color: #dc2626; color: #dc2626; background: #fee2e2; }
+.cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.cat-tab {
+  font-size: 11px; padding: 4px 12px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--borda); background: #fff; color: var(--suave);
+  font-family: 'DM Sans', sans-serif; font-weight: 400; transition: all 0.15s;
+}
+.cat-tab.active { background: var(--azul); color: #fff; border-color: var(--azul); }
+.tpl-empty { text-align: center; padding: 40px; color: var(--suave); font-size: 13px; }
+.tpl-counter { font-size: 12px; color: var(--suave); margin-bottom: 8px; }
+
+/* MODAL EDITAR TEMPLATE */
+.tpl-modal-bg {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 300; align-items: center; justify-content: center;
+}
+.tpl-modal-bg.open { display: flex; }
+.tpl-modal {
+  background: #fff; border-radius: 12px; width: 680px; max-width: 96vw;
+  max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;
+}
+.tpl-modal-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--borda);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.tpl-modal-header h3 { font-size: 15px; font-weight: 500; color: var(--azul); }
+.tpl-modal-body { padding: 20px 24px; flex: 1; }
+.tpl-modal-footer {
+  padding: 14px 24px; border-top: 1px solid var(--borda);
+  display: flex; gap: 10px; justify-content: space-between;
+  position: sticky; bottom: 0; background: #fff;
+}
+.tpl-textarea {
+  width: 100%; min-height: 260px; font-size: 13px; padding: 12px;
+  border-radius: 7px; border: 1px solid var(--borda); color: var(--texto);
+  font-family: 'DM Sans', sans-serif; line-height: 1.6; resize: vertical;
+  transition: border-color 0.15s;
+}
+.tpl-textarea:focus { outline: none; border-color: var(--azul-c); }
+.tpl-chars { font-size: 11px; color: var(--suave); margin-top: 4px; text-align: right; }
+.vars-grid {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+}
+.var-chip {
+  font-size: 11px; padding: 3px 10px; border-radius: 5px;
+  background: #e6f1fb; color: var(--azul); cursor: pointer;
+  font-family: monospace; border: 1px solid #bfdbfe; transition: all 0.15s;
+}
+.var-chip:hover { background: var(--azul); color: #fff; }
+
+/* LOADING */
+.loading { text-align: center; padding: 60px; color: var(--suave); font-size: 14px; }
+.loading-dot { display: inline-block; width: 8px; height: 8px; background: var(--azul-c); border-radius: 50%; margin: 0 3px; animation: bounce 1.2s infinite; }
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }
+
+/* ADMIN */
+.admin-card { background:#fff;border:1px solid var(--borda);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.15s; }
+.admin-card:hover { box-shadow:0 4px 16px rgba(0,51,102,0.1);transform:translateY(-2px);border-color:#1a7fd4; }
+.admin-card-icon { font-size:28px;margin-bottom:10px; }
+.admin-card-title { font-size:14px;font-weight:600;color:var(--azul);margin-bottom:6px; }
+.admin-card-desc { font-size:12px;color:var(--suave);line-height:1.5;margin-bottom:12px; }
+.admin-card-btn { font-size:12px;font-weight:500;color:var(--azul-c); }
+.imp-step { flex:1;padding:14px;font-size:12px;font-weight:500;color:var(--suave);text-align:center;border-right:1px solid var(--borda); }
+.imp-step.active { color:var(--azul);background:#f0f7ff;font-weight:600; }
+.imp-step.done { color:#059669; }
+.imp-body { padding:24px; }
+.upload-zone { border:2px dashed var(--borda);border-radius:12px;padding:48px 24px;text-align:center;transition:all 0.15s; }
+.upload-zone.drag,.upload-zone:hover { border-color:var(--azul-c);background:#f0f7ff; }
+#preview-table th { padding:10px 12px;font-size:11px;font-weight:600;text-align:left;white-space:nowrap; }
+#preview-table td { padding:8px 12px;font-size:12px;border-bottom:1px solid var(--borda);white-space:nowrap; }
+.imp-stat { background:#fff;border:1px solid var(--borda);border-radius:8px;padding:12px 16px;text-align:center;min-width:90px; }
+.imp-stat-val { font-size:22px;font-weight:600;color:var(--azul); }
+.imp-stat-lbl { font-size:11px;color:var(--suave);margin-top:2px; }
+.imp-stat-val.ok{color:#059669;} .imp-stat-val.warn{color:#d97706;} .imp-stat-val.err{color:#dc2626;}
+.map-field { display:flex;flex-direction:column;gap:5px; }
+.map-field label { font-size:11px;font-weight:600;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px; }
+.map-field select { font-size:12px;padding:8px 10px;border-radius:7px;border:1px solid var(--borda);color:var(--texto);font-family:'DM Sans',sans-serif; }
+
+/* TELA ALUNOS */
+.alunos-table { width:100%;border-collapse:collapse;font-size:13px; }
+.alunos-table th {
+  padding:10px 14px;font-size:11px;font-weight:600;color:var(--suave);
+  text-transform:uppercase;letter-spacing:0.4px;background:#f8fafc;
+  border-bottom:2px solid var(--borda);text-align:left;white-space:nowrap;
+  position:sticky;top:0;z-index:1;
+}
+.alunos-table td {
+  padding:10px 14px;border-bottom:1px solid var(--borda);
+  color:var(--texto);vertical-align:middle;
+}
+.alunos-table tbody tr:hover { background:#f8fafc;cursor:pointer; }
+.alunos-table tbody tr:hover td { color:var(--azul); }
+.status-badge {
+  font-size:10px;padding:3px 8px;border-radius:10px;
+  font-weight:600;white-space:nowrap;display:inline-block;
+}
+.alunos-pagination {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;font-size:12px;color:var(--suave);
+}
+.alunos-pagination button {
+  padding:6px 14px;border-radius:6px;border:1px solid var(--borda);
+  background:#fff;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;
+  color:var(--azul);transition:all 0.15s;
+}
+.alunos-pagination button:hover { background:var(--azul);color:#fff;border-color:var(--azul); }
+.alunos-pagination button:disabled { opacity:0.4;cursor:not-allowed; }
+.aluno-wpp {
+  font-size:11px;color:#059669;font-weight:500;cursor:pointer;
+  background:none;border:none;padding:0;font-family:inherit;
+}
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>LL<span>EW</span></h1>
+    <p>Plataforma de Vendas</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item" onclick="showSection('kanban')">
+      <span class="nav-icon">⊞</span> Kanban
+    </div>
+    <div class="nav-item active" onclick="showSection('leads')">
+      <span class="nav-icon">◉</span> Leads
+    </div>
+    <div class="nav-item" onclick="showSection('templates')">
+      <span class="nav-icon">✉</span> Templates
+    </div>
+    <div class="nav-item" onclick="showSection('alunos')">
+      <span class="nav-icon">🎓</span> Alunos
+    </div>
+    <div class="nav-item" onclick="showSection('config')">
+      <span class="nav-icon">⚙</span> Configurações
+    </div>
+  </nav>
+  <div style="padding:8px 16px;border-top:1px solid rgba(255,255,255,0.08)">
+    <div class="nav-item" onclick="abrirAdmin()" style="color:rgba(255,200,100,0.85);padding:10px 4px">
+      <span class="nav-icon">🔐</span> Admin
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <strong>Tom Borges</strong>
+    Consultor MUST University
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <span class="topbar-title">Kanban de Leads <span id="leads-count">(4 leads)</span></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="carregarLeads()">↻ Atualizar</button>
+      <button class="btn btn-primary" onclick="abrirModalNovo()">+ Novo Lead</button>
+    </div>
+  </div>
+
+  <div class="content" id="section-kanban" style="display: none;">
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total de leads</div>
+        <div class="stat-val" id="st-total">4</div>
+        <div class="stat-sub">no funil ativo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">SQLs — 400+ pts</div>
+        <div class="stat-val hot" id="st-sql">0</div>
+        <div class="stat-sub">prontos para fechar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Docs pendentes</div>
+        <div class="stat-val" id="st-docs">3</div>
+        <div class="stat-sub">aguardando envio</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Taxa paga</div>
+        <div class="stat-val ok" id="st-taxa">0</div>
+        <div class="stat-sub">matrículas confirmadas</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filtros">
+      <input type="text" id="busca" placeholder="Buscar por nome ou WhatsApp..." oninput="filtrar()">
+      <select id="f-programa" onchange="filtrar()">
+        <option value="">Todos os programas</option>
+      <option value="1e9d1118-0718-4fe5-8e43-7a84ab3abae9">Administração (Business Administration)</option><option value="62f0c052-7103-4e0e-9ec1-9b8892d893e3">Desenvolvimento de Negócios e Inovação</option><option value="dba1f130-62b6-4a92-ab67-00837a9979ba">Negócios Internacionais</option><option value="cce88817-c24f-4d5c-a9ce-fce80ea34ad5">Marketing Digital</option><option value="e25e192d-8c6d-4320-a482-b9f0d0774888">Tecnologias Emergentes na Educação</option><option value="edc784cf-279d-488a-aacd-c2c47a12be06">Gestão de Cuidados da Saúde</option><option value="b0618e41-b880-4cd1-a581-ee5ec4d36ef1">Psicologia Organizacional</option><option value="89ed806f-7d0c-47aa-8365-0b03af031fac">Estudos Jurídicos (Direito Internacional)</option></select>
+      <select id="f-turma" onchange="filtrar()">
+        <option value="">Todas as turmas</option>
+      <option value="2d984d79-79cd-40e9-849c-3cefe8c58c72">Turma Janeiro 2026</option><option value="690fc3ab-a918-49cb-9911-db4cfd52483e">Turma Fevereiro 2026</option><option value="2e233c9c-4249-49b8-abd6-3903d59fee47">Turma Março 2026</option><option value="b4146aaa-2d29-47f0-b95d-fce7200666c9">Turma Maio 2026</option><option value="e19110bb-187c-40e1-be63-c7d94fa1f4e5">Turma Junho 2026</option><option value="cb190d53-d5ef-4d61-8190-47d8d79e6214">Turma Julho 2026</option><option value="dd82ee2c-2981-489b-b066-730457e71eff">Turma Agosto 2026</option><option value="c0bbf56d-24d6-4a4d-8965-8f24983abb9d">Turma Outubro 2026</option><option value="2d197aba-d426-44d8-a853-a19353637610">Turma Novembro 2026</option></select>
+      <select id="f-bolsa" onchange="filtrar()">
+        <option value="">Todas as bolsas</option>
+      <option value="b3863d19-93ab-4b7b-b96c-13d58ae67dbc">Carbonari</option><option value="0642271f-244c-4bcf-8dd1-826792921629">Carbonari / Alliance</option><option value="f004eac9-d7d3-4eec-a8de-b7252c5e38a5">Healthcare</option><option value="f57153f0-eac4-40d2-8fdc-21aac9824a43">CFA / CRA Jubileu 60</option></select>
+    </div>
+
+    <!-- KANBAN -->
+    <div class="kanban" id="kanban"><div class="col">
+      <div class="col-header" style="background:#64748b18;border:1px solid #64748b35">
+        <span class="col-name" style="color:#64748b">Lead Novo</span>
+        <span class="col-badge" style="background:#64748b25;color:#64748b">1</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-6abd556f-60ee-4718-8b3a-058f6c15d565" ondragover="onDragOver(event,'6abd556f-60ee-4718-8b3a-058f6c15d565')" ondragleave="onDragLeave('6abd556f-60ee-4718-8b3a-058f6c15d565')" ondrop="onDrop(event,'6abd556f-60ee-4718-8b3a-058f6c15d565','Lead Novo')">
+        <div class="card" draggable="true" data-id="db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8" ondragstart="onDragStart(event,'db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8')" ondragend="onDragEnd()" onclick="abrirDetalhe('db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8')">
+        <div class="card-name">Sonia Fraga</div>
+        <div class="card-prog">—</div>
+        
+        <div class="card-score-bar">
+          <div class="card-score-fill" style="width:0%;background:#64748b"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:500;color:#64748b;background:#64748b15;padding:3px 8px;border-radius:6px">0 pts</span>
+          <span class="card-days ">hoje</span>
+        </div>
+        <div class="card-foot">
+          <button class="card-wpp" onclick="event.stopPropagation();abrirWpp('5521967258559')">↗ WhatsApp</button>
+          <span style="font-size:10px;color:var(--suave)"></span>
+        </div>
+      </div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#2563eb18;border:1px solid #2563eb35">
+        <span class="col-name" style="color:#2563eb">Descoberta</span>
+        <span class="col-badge" style="background:#2563eb25;color:#2563eb">1</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-c0795aca-14f2-405d-9b7a-4f3ab7f6c637" ondragover="onDragOver(event,'c0795aca-14f2-405d-9b7a-4f3ab7f6c637')" ondragleave="onDragLeave('c0795aca-14f2-405d-9b7a-4f3ab7f6c637')" ondrop="onDrop(event,'c0795aca-14f2-405d-9b7a-4f3ab7f6c637','Descoberta')">
+        <div class="card" draggable="true" data-id="7eef164e-ecb9-4985-9446-49f0ab3d75dd" ondragstart="onDragStart(event,'7eef164e-ecb9-4985-9446-49f0ab3d75dd')" ondragend="onDragEnd()" onclick="abrirDetalhe('7eef164e-ecb9-4985-9446-49f0ab3d75dd')">
+        <div class="card-name">teste</div>
+        <div class="card-prog">Administração (Business Administration)</div>
+        <span class="doc-badge" style="background:#fef3c7;color:#92400e">Docs pendentes</span>
+        <div class="card-score-bar">
+          <div class="card-score-fill" style="width:0%;background:#2563eb"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:500;color:#2563eb;background:#2563eb15;padding:3px 8px;border-radius:6px">0 pts</span>
+          <span class="card-days ">1d sem acesso</span>
+        </div>
+        <div class="card-foot">
+          <button class="card-wpp" onclick="event.stopPropagation();abrirWpp('19983322939')">↗ WhatsApp</button>
+          <span style="font-size:10px;color:var(--suave)">Turma Janeiro 2026</span>
+        </div>
+      </div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#d9770618;border:1px solid #d9770635">
+        <span class="col-name" style="color:#d97706">Interesse</span>
+        <span class="col-badge" style="background:#d9770625;color:#d97706">0</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-ded827be-79db-40a9-9adb-50d39bf62f43" ondragover="onDragOver(event,'ded827be-79db-40a9-9adb-50d39bf62f43')" ondragleave="onDragLeave('ded827be-79db-40a9-9adb-50d39bf62f43')" ondrop="onDrop(event,'ded827be-79db-40a9-9adb-50d39bf62f43','Interesse')">
+        <div class="col-empty">Sem leads</div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#ea580c18;border:1px solid #ea580c35">
+        <span class="col-name" style="color:#ea580c">Consideração</span>
+        <span class="col-badge" style="background:#ea580c25;color:#ea580c">0</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-0918bdd0-d07f-4a7c-85e6-8d484cecafe9" ondragover="onDragOver(event,'0918bdd0-d07f-4a7c-85e6-8d484cecafe9')" ondragleave="onDragLeave('0918bdd0-d07f-4a7c-85e6-8d484cecafe9')" ondrop="onDrop(event,'0918bdd0-d07f-4a7c-85e6-8d484cecafe9','Consideração')">
+        <div class="col-empty">Sem leads</div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#dc262618;border:1px solid #dc262635">
+        <span class="col-name" style="color:#dc2626">Decisão</span>
+        <span class="col-badge" style="background:#dc262625;color:#dc2626">0</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-33ba1967-2959-4663-a3d6-b459cba81020" ondragover="onDragOver(event,'33ba1967-2959-4663-a3d6-b459cba81020')" ondragleave="onDragLeave('33ba1967-2959-4663-a3d6-b459cba81020')" ondrop="onDrop(event,'33ba1967-2959-4663-a3d6-b459cba81020','Decisão')">
+        <div class="col-empty">Sem leads</div>
+      </div>
+    </div><div class="col">
+      <div class="col-header" style="background:#05966918;border:1px solid #05966935">
+        <span class="col-name" style="color:#059669">Aluno</span>
+        <span class="col-badge" style="background:#05966925;color:#059669">1</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-63cf6fe2-5239-48db-be6b-b8e2b5d7e956" ondragover="onDragOver(event,'63cf6fe2-5239-48db-be6b-b8e2b5d7e956')" ondragleave="onDragLeave('63cf6fe2-5239-48db-be6b-b8e2b5d7e956')" ondrop="onDrop(event,'63cf6fe2-5239-48db-be6b-b8e2b5d7e956','Aluno')">
+        <div class="card" draggable="true" data-id="72e6dba7-5706-41c1-9ca5-683523f43094" ondragstart="onDragStart(event,'72e6dba7-5706-41c1-9ca5-683523f43094')" ondragend="onDragEnd()" onclick="abrirDetalhe('72e6dba7-5706-41c1-9ca5-683523f43094')">
+        <div class="card-name">gustavo</div>
+        <div class="card-prog">Administração (Business Administration)</div>
+        <span class="doc-badge" style="background:#fef3c7;color:#92400e">Docs pendentes</span>
+        <div class="card-score-bar">
+          <div class="card-score-fill" style="width:0%;background:#059669"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:500;color:#059669;background:#05966915;padding:3px 8px;border-radius:6px">0 pts</span>
+          <span class="card-days ">hoje</span>
+        </div>
+        <div class="card-foot">
+          <button class="card-wpp" onclick="event.stopPropagation();abrirWpp('1983434384384')">↗ WhatsApp</button>
+          <span style="font-size:10px;color:var(--suave)">Turma Janeiro 2026</span>
+        </div>
+      </div>
+      </div>
+    </div></div>
+  </div>
+</main>
+
+<!-- SEÇÃO TEMPLATES -->
+<div id="section-templates" style="display:none;margin-left:220px;min-height:100vh">
+  <div class="topbar" style="position:sticky;top:0;z-index:40">
+    <div style="display:flex;align-items:center;gap:12px;flex:1">
+      <span class="topbar-title">Templates <span id="tpl-total"></span></span>
+      <input type="text" id="tpl-busca" placeholder="Buscar por palavra-chave..." style="font-size:12px;padding:7px 14px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif;width:280px" oninput="filtrarTemplates()">
+    </div>
+    <div class="topbar-actions">
+      <span id="tpl-counter" style="font-size:12px;color:var(--suave)"></span>
+    </div>
+  </div>
+  <div class="content" style="padding:16px 28px">
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <div class="tpl-grid" id="tpl-grid">
+      <div class="loading">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <p style="margin-top:12px">Carregando templates...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEÇÃO ALUNOS -->
+<div id="section-alunos" style="display:none;margin-left:220px;min-height:100vh">
+  <div class="topbar" style="position:sticky;top:0;z-index:40">
+    <div style="display:flex;align-items:center;gap:12px;flex:1">
+      <span class="topbar-title">🎓 Alunos <span id="alunos-count" style="font-size:12px;font-weight:400;color:var(--suave)"></span></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="carregarAlunos()">↻ Atualizar</button>
+      <button class="btn btn-outline" onclick="exportarAlunos()" style="color:#059669;border-color:#059669">↓ Exportar CSV</button>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div style="background:#fff;border-bottom:1px solid var(--borda);padding:12px 28px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <input type="text" id="al-busca" placeholder="Buscar por nome, email ou WhatsApp..."
+      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif;width:260px"
+      oninput="filtrarAlunos()">
+    <select id="al-status" onchange="filtrarAlunos()"
+      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todos os status</option>
+      <option value="aluno_ativo">Aluno Ativo</option>
+      <option value="concluido">Concluído</option>
+      <option value="aluno_matriculado">Matriculado</option>
+      <option value="lead_novo">Lead Novo</option>
+      <option value="pre_matricula">Pré-matrícula</option>
+      <option value="taxa_paga">Taxa Paga</option>
+    </select>
+    <select id="al-programa" onchange="filtrarAlunos()"
+      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todos os programas</option>
+    </select>
+    <select id="al-consultor" onchange="filtrarAlunos()"
+      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todos os consultores</option>
+    </select>
+    <select id="al-base" onchange="filtrarAlunos()"
+      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todas as bases</option>
+      <option value="Atual">Base Atual</option>
+      <option value="Histórica">Base Histórica</option>
+    </select>
+    <button onclick="limparFiltrosAlunos()" class="btn btn-outline" style="font-size:12px">✕ Limpar</button>
+  </div>
+
+  <div class="content" style="padding:20px 28px">
+    <!-- STATS RÁPIDOS -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="alunos-stats"></div>
+
+    <!-- TABELA -->
+    <div style="background:#fff;border:1px solid var(--borda);border-radius:10px;overflow:hidden">
+      <div style="overflow-x:auto">
+        <table class="alunos-table">
+          <thead>
+            <tr>
+              <th onclick="ordenarAlunos('nome')" style="cursor:pointer">Nome ↕</th>
+              <th>WhatsApp</th>
+              <th>Email</th>
+              <th>Cidade</th>
+              <th onclick="ordenarAlunos('programa')" style="cursor:pointer">Programa ↕</th>
+              <th>Turma</th>
+              <th>Consultor</th>
+              <th>Convênio</th>
+              <th onclick="ordenarAlunos('status_kanban')" style="cursor:pointer">Status ↕</th>
+            </tr>
+          </thead>
+          <tbody id="alunos-tbody">
+            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--suave)">
+              Carregando alunos...
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alunos-pagination" style="padding:12px 20px;border-top:1px solid var(--borda)">
+        <span id="al-pag-info"></span>
+        <div style="display:flex;gap:6px">
+          <button onclick="pagAlunos(-1)" id="al-btn-prev">← Anterior</button>
+          <span id="al-pag-pages" style="display:flex;gap:4px;align-items:center"></span>
+          <button onclick="pagAlunos(1)" id="al-btn-next">Próxima →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEÇÃO ADMIN -->
+<div id="section-admin" style="display:none;margin-left:220px;min-height:100vh">
+  <div class="topbar" style="position:sticky;top:0;z-index:40">
+    <span class="topbar-title">⚙ Administração <span style="font-size:12px;color:#dc2626;margin-left:8px;font-weight:400">Acesso restrito</span></span>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="sairAdmin()" style="color:#dc2626;border-color:#dc2626">🔒 Sair do Admin</button>
+    </div>
+  </div>
+  <div class="content" style="padding:24px 28px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px">
+      <div class="admin-card" onclick="mostrarImportador()">
+        <div class="admin-card-icon">📥</div>
+        <div class="admin-card-title">Importar Planilha</div>
+        <div class="admin-card-desc">Carregue CSV ou XLS com alunos/leads. Preview antes de confirmar. Normalização automática de telefone, status e programa.</div>
+        <div class="admin-card-btn">Abrir importador →</div>
+      </div>
+      <div class="admin-card" style="opacity:0.5;cursor:not-allowed">
+        <div class="admin-card-icon">👥</div>
+        <div class="admin-card-title">Gestão de Usuários</div>
+        <div class="admin-card-desc">Criar consultores e definir permissões por tenant.</div>
+        <div class="admin-card-btn" style="color:#94a3b8">Em breve</div>
+      </div>
+      <div class="admin-card" style="opacity:0.5;cursor:not-allowed">
+        <div class="admin-card-icon">🏢</div>
+        <div class="admin-card-title">Tenants / White Label</div>
+        <div class="admin-card-desc">Criar e configurar ambientes para outros consultores.</div>
+        <div class="admin-card-btn" style="color:#94a3b8">Em breve</div>
+      </div>
+    </div>
+    <div id="painel-importador" style="display:none">
+      <div style="background:#fff;border:1px solid var(--borda);border-radius:12px;overflow:hidden">
+        <div style="display:flex;border-bottom:1px solid var(--borda)">
+          <div class="imp-step active" id="step-tab-1">① Carregar arquivo</div>
+          <div class="imp-step" id="step-tab-2">② Mapear colunas</div>
+          <div class="imp-step" id="step-tab-3">③ Preview & importar</div>
+          <div class="imp-step" id="step-tab-4">④ Resultado</div>
+        </div>
+        <div id="step-1" class="imp-body">
+          <div class="upload-zone" id="upload-zone"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')" ondrop="onFileDrop(event)">
+            <div style="font-size:48px;margin-bottom:12px">📂</div>
+            <div style="font-size:15px;font-weight:500;color:var(--azul);margin-bottom:6px">Arraste o arquivo aqui</div>
+            <div style="font-size:13px;color:var(--suave);margin-bottom:16px">CSV ou XLS/XLSX</div>
+            <label class="btn btn-primary" style="cursor:pointer">Selecionar arquivo
+              <input type="file" id="file-input" accept=".csv,.xls,.xlsx" style="display:none" onchange="carregarArquivo(this.files[0])">
+            </label>
+          </div>
+          <div id="file-info" style="display:none;padding:16px 24px;border-top:1px solid var(--borda);font-size:13px;color:var(--suave)"></div>
+        </div>
+        <div id="step-2" class="imp-body" style="display:none">
+          <p style="font-size:13px;color:var(--suave);margin-bottom:16px">Associe cada coluna ao campo correto. Não mapeadas serão ignoradas.</p>
+          <div id="mapa-colunas" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+          <div style="margin-top:20px;display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="irParaPreview()">Ver preview →</button>
+          </div>
+        </div>
+        <div id="step-3" class="imp-body" style="display:none">
+          <div id="preview-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+          <div style="overflow-x:auto;max-height:400px;border:1px solid var(--borda);border-radius:8px">
+            <table id="preview-table" style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead id="preview-thead" style="background:var(--azul);color:#fff;position:sticky;top:0"></thead>
+              <tbody id="preview-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;padding:12px 16px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e">
+            ⚠ Duplicatas (mesmo WhatsApp) serão ignoradas. Registros sem nome serão descartados.
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn btn-outline" onclick="irParaStep(2)">← Voltar</button>
+            <button class="btn btn-primary" id="btn-importar" onclick="executarImportacao()">✓ Importar</button>
+          </div>
+        </div>
+        <div id="step-4" class="imp-body" style="display:none">
+          <div id="resultado-importacao" style="text-align:center;padding:20px 0"></div>
+          <div id="erros-importacao" style="margin-top:16px"></div>
+          <div style="margin-top:20px;display:flex;gap:10px;justify-content:center">
+            <button class="btn btn-outline" onclick="novaImportacao()">Importar outro arquivo</button>
+            <button class="btn btn-primary" onclick="showSection('kanban')">Ver Kanban →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SENHA ADMIN -->
+<div class="modal-bg" id="modal-admin-senha">
+  <div class="modal" style="width:380px">
+    <div class="modal-header"><h3>🔐 Acesso Admin</h3></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--suave);margin-bottom:16px">Digite a senha de administrador.</p>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="admin-senha-input" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter') verificarSenhaAdmin()">
+      </div>
+      <div id="admin-senha-erro" style="display:none;color:#dc2626;font-size:12px;margin-top:8px">❌ Senha incorreta.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="fecharModalAdmin()">Cancelar</button>
+      <button class="btn btn-primary" onclick="verificarSenhaAdmin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO LEAD -->
+<div class="modal-bg" id="modal-novo" onclick="fecharModalNovo(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Novo Lead</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-novo').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome completo *</label>
+          <input type="text" id="f-nome" placeholder="Ana Beatriz Souza">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp *</label>
+          <input type="text" id="f-wpp" placeholder="5511987654321">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="ana@email.com">
+        </div>
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" id="f-cidade" placeholder="São Paulo">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Programa</label>
+          <select id="f-prog-novo"><option value="1e9d1118-0718-4fe5-8e43-7a84ab3abae9">Administração (Business Administration)</option><option value="62f0c052-7103-4e0e-9ec1-9b8892d893e3">Desenvolvimento de Negócios e Inovação</option><option value="dba1f130-62b6-4a92-ab67-00837a9979ba">Negócios Internacionais</option><option value="cce88817-c24f-4d5c-a9ce-fce80ea34ad5">Marketing Digital</option><option value="e25e192d-8c6d-4320-a482-b9f0d0774888">Tecnologias Emergentes na Educação</option><option value="edc784cf-279d-488a-aacd-c2c47a12be06">Gestão de Cuidados da Saúde</option><option value="b0618e41-b880-4cd1-a581-ee5ec4d36ef1">Psicologia Organizacional</option><option value="89ed806f-7d0c-47aa-8365-0b03af031fac">Estudos Jurídicos (Direito Internacional)</option></select>
+        </div>
+        <div class="form-group">
+          <label>Turma</label>
+          <select id="f-turma-novo"><option value="2d984d79-79cd-40e9-849c-3cefe8c58c72">Turma Janeiro 2026</option><option value="690fc3ab-a918-49cb-9911-db4cfd52483e">Turma Fevereiro 2026</option><option value="2e233c9c-4249-49b8-abd6-3903d59fee47">Turma Março 2026</option><option value="b4146aaa-2d29-47f0-b95d-fce7200666c9">Turma Maio 2026</option><option value="e19110bb-187c-40e1-be63-c7d94fa1f4e5">Turma Junho 2026</option><option value="cb190d53-d5ef-4d61-8190-47d8d79e6214">Turma Julho 2026</option><option value="dd82ee2c-2981-489b-b066-730457e71eff">Turma Agosto 2026</option><option value="c0bbf56d-24d6-4a4d-8965-8f24983abb9d">Turma Outubro 2026</option><option value="2d197aba-d426-44d8-a853-a19353637610">Turma Novembro 2026</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bolsa</label>
+          <select id="f-bolsa-novo"><option value="b3863d19-93ab-4b7b-b96c-13d58ae67dbc">Carbonari</option><option value="0642271f-244c-4bcf-8dd1-826792921629">Carbonari / Alliance</option><option value="f004eac9-d7d3-4eec-a8de-b7252c5e38a5">Healthcare</option><option value="f57153f0-eac4-40d2-8fdc-21aac9824a43">CFA / CRA Jubileu 60</option></select>
+        </div>
+        <div class="form-group">
+          <label>Origem</label>
+          <select id="f-origem-novo"><option value="49f9650f-156e-49a3-b290-66d21a527314">Funil (página web)</option><option value="563cc9a9-1089-48d9-a5f9-635ce51c0292">WhatsApp direto</option><option value="8beb13b7-e904-40f9-9b1e-1534aab9555a">Indicação de aluno</option><option value="7cecabc5-ae82-416b-9b04-03c0c59509b9">Planilha importada</option><option value="7f1243be-c7a5-4e4e-ab9c-9c0b0042c8df">Instagram</option><option value="393486a4-d325-44ab-9215-f4e749e3a13f">LinkedIn</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-novo').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarLead()">Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE LEAD -->
+<div class="modal-bg" id="modal-detalhe" onclick="fecharDetalhe(event)">
+  <div class="modal" id="modal-detalhe-content">
+    <div class="modal-header">
+      <h3>Sonia Fraga</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-detalhe').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-row"><span class="detail-label">WhatsApp</span><span class="detail-val">5521967258559</span></div>
+      <div class="detail-row"><span class="detail-label">Email</span><span class="detail-val">—</span></div>
+      <div class="detail-row"><span class="detail-label">Cidade</span><span class="detail-val">—</span></div>
+      <div class="detail-row"><span class="detail-label">Programa</span><span class="detail-val">—</span></div>
+      <div class="detail-row"><span class="detail-label">Turma</span><span class="detail-val">—</span></div>
+      <div class="detail-row"><span class="detail-label">Bolsa</span><span class="detail-val">—</span></div>
+      <div class="detail-row"><span class="detail-label">Score</span><span class="detail-val" style="color:var(--azul);font-size:16px">0 pts</span></div>
+      <div class="detail-row"><span class="detail-label">Status</span><span class="detail-val">lead_novo</span></div>
+
+      <p style="font-size:11px;font-weight:500;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px;margin:16px 0 8px">Mover para fase</p>
+      <div class="move-grid"><button class="move-btn current" style="border-color:#64748b;color:#64748b;background:#64748b20;" onclick="moverLead('db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8','6abd556f-60ee-4718-8b3a-058f6c15d565','Lead Novo')">
+      ✓ Lead Novo
+    </button><button class="move-btn " style="border-color:#2563eb;color:#2563eb;" onclick="moverLead('db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8','c0795aca-14f2-405d-9b7a-4f3ab7f6c637','Descoberta')">
+      Descoberta
+    </button><button class="move-btn " style="border-color:#d97706;color:#d97706;" onclick="moverLead('db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8','ded827be-79db-40a9-9adb-50d39bf62f43','Interesse')">
+      Interesse
+    </button><button class="move-btn " style="border-color:#ea580c;color:#ea580c;" onclick="moverLead('db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8','0918bdd0-d07f-4a7c-85e6-8d484cecafe9','Consideração')">
+      Consideração
+    </button><button class="move-btn " style="border-color:#dc2626;color:#dc2626;" onclick="moverLead('db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8','33ba1967-2959-4663-a3d6-b459cba81020','Decisão')">
+      Decisão
+    </button><button class="move-btn " style="border-color:#059669;color:#059669;" onclick="moverLead('db17f7b3-f452-44ed-bdb9-ec4fcf5c23b8','63cf6fe2-5239-48db-be6b-b8e2b5d7e956','Aluno')">
+      Aluno
+    </button></div>
+
+      <p style="font-size:11px;font-weight:500;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px;margin:16px 0 8px">Link rastreável para enviar</p>
+      <div class="link-box">
+        <code>mestrado.llew.com.br/investimento?w=5521967258559</code>
+        <button class="link-copy" onclick="copiarLink('mestrado.llew.com.br/investimento?w=5521967258559')">Copiar</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="abrirWpp('5521967258559')">Abrir WhatsApp</button>
+      <button class="btn btn-primary" onclick="document.getElementById('modal-detalhe').classList.remove('open')">Fechar</button>
+    </div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL EDITAR TEMPLATE -->
+<div class="tpl-modal-bg" id="tpl-modal-bg" onclick="fecharModalTpl(event)">
+  <div class="tpl-modal">
+    <div class="tpl-modal-header">
+      <h3 id="tpl-modal-titulo">Editar Template</h3>
+      <button class="modal-close" onclick="document.getElementById('tpl-modal-bg').classList.remove('open')">✕</button>
+    </div>
+    <div class="tpl-modal-body">
+      <div class="form-row" style="margin-bottom:12px">
+        <div class="form-group">
+          <label>Trigger (atalho)</label>
+          <input type="text" id="tpl-edit-trigger" placeholder="-inv" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <select id="tpl-edit-situacao">
+            <option value="investimento">Investimento</option>
+            <option value="documentos">Documentos</option>
+            <option value="apresentacao">Apresentação</option>
+            <option value="acesso_ava">Acesso AVA</option>
+            <option value="matricula">Matrícula</option>
+            <option value="boas_vindas">Boas-vindas</option>
+            <option value="contrato">Contrato</option>
+            <option value="reengajamento">Reengajamento</option>
+            <option value="geral">Geral</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label>Conteúdo da mensagem</label>
+        <textarea class="tpl-textarea" id="tpl-edit-conteudo" oninput="document.getElementById('tpl-chars').textContent = this.value.length + ' caracteres'"></textarea>
+        <div class="tpl-chars" id="tpl-chars">0 caracteres</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:500;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">
+          Variáveis disponíveis — clique para inserir
+        </div>
+        <div class="vars-grid">
+          <span class="var-chip" onclick="inserirVar('{{nome}}')">{{nome}}</span>
+          <span class="var-chip" onclick="inserirVar('{{programa}}')">{{programa}}</span>
+          <span class="var-chip" onclick="inserirVar('{{turma}}')">{{turma}}</span>
+          <span class="var-chip" onclick="inserirVar('{{bolsa}}')">{{bolsa}}</span>
+          <span class="var-chip" onclick="inserirVar('{{parcelas}}')">{{parcelas}}</span>
+          <span class="var-chip" onclick="inserirVar('{{valor_parcela}}')">{{valor_parcela}}</span>
+          <span class="var-chip" onclick="inserirVar('{{invest_total}}')">{{invest_total}}</span>
+          <span class="var-chip" onclick="inserirVar('{{taxa_matricula}}')">{{taxa_matricula}}</span>
+          <span class="var-chip" onclick="inserirVar('{{data_prevista}}')">{{data_prevista}}</span>
+          <span class="var-chip" onclick="inserirVar('{{consultor}}')">{{consultor}}</span>
+          <span class="var-chip" onclick="inserirVar('{{mensagem_custom}}')">{{mensagem_custom}}</span>
+        </div>
+      </div>
+    </div>
+    <div class="tpl-modal-footer">
+      <button class="btn btn-outline" id="tpl-del-btn" onclick="desativarTemplate()" style="color:#dc2626;border-color:#dc2626">
+        Desativar template
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="document.getElementById('tpl-modal-bg').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarTemplate()">Salvar alterações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- deploy bar movida para sidebar -->
+
+</body></html>
+
+<script>
+
+const SUPA_URL = 'https://etdbrjnxmqqegtsmeufg.supabase.co';
+const SUPA_KEY = 'sb_publishable_5VftYdg--U3dWq7JWP9RaQ_nKZUu3no';
+const { createClient } = supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+const TENANT_SLUG = 'tom-borges';
+let tenantId = null;
+let leads = [];
+let colunas = [];
+let programas = [];
+let turmas = [];
+let bolsas = [];
+let origens = [];
+let dragId = null;
+
+// ── INIT ──
+async function init() {
+  const { data: t } = await db.from('tenants').select('id').eq('slug', TENANT_SLUG).single();
+  if (!t) { document.getElementById('kanban').innerHTML = '<div class="loading"><p>Tenant não encontrado. Execute o SQL master primeiro.</p></div>'; return; }
+  tenantId = t.id;
+  await Promise.all([carregarColunas(), carregarProgramas(), carregarTurmas(), carregarBolsas(), carregarOrigens()]);
+  await carregarLeads();
+}
+
+async function carregarColunas() {
+  const { data } = await db.from('kanban_colunas').select('*').eq('tenant_id', tenantId).eq('ativo', true).order('ordem');
+  colunas = data || [];
+}
+
+async function carregarProgramas() {
+  const { data } = await db.from('programas').select('*').eq('tenant_id', tenantId).eq('ativo', true);
+  programas = data || [];
+  const sel = document.getElementById('f-programa');
+  const selN = document.getElementById('f-prog-novo');
+  programas.forEach(p => {
+    sel.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+    selN.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+  });
+}
+
+async function carregarTurmas() {
+  const { data } = await db.from('turmas').select('*').eq('tenant_id', tenantId).eq('ativo', true).order('data_inicio');
+  turmas = data || [];
+  const sel = document.getElementById('f-turma');
+  const selN = document.getElementById('f-turma-novo');
+  turmas.forEach(t => {
+    sel.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
+    selN.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
+  });
+}
+
+async function carregarBolsas() {
+  const { data } = await db.from('bolsas').select('*').eq('tenant_id', tenantId).eq('ativo', true);
+  bolsas = data || [];
+  const sel = document.getElementById('f-bolsa');
+  const selN = document.getElementById('f-bolsa-novo');
+  bolsas.forEach(b => {
+    sel.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+    selN.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+  });
+}
+
+async function carregarOrigens() {
+  const { data } = await db.from('origens').select('*').eq('tenant_id', tenantId).eq('ativo', true).order('ordem');
+  origens = data || [];
+  const selN = document.getElementById('f-origem-novo');
+  origens.forEach(o => {
+    selN.innerHTML += `<option value="${o.id}">${o.nome}</option>`;
+  });
+}
+
+async function carregarLeads() {
+  document.getElementById('kanban').innerHTML = '<div class="loading"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><p style="margin-top:12px">Carregando leads...</p></div>';
+
+  const { data, error } = await db
+    .from('leads')
+    .select(`*, candidaturas(programa_id, turma_id, bolsa_id, status, programas(nome), turmas(nome), bolsas(nome))`)
+    .eq('tenant_id', tenantId)
+    .order('score_total', { ascending: false });
+
+  if (error) {
+    document.getElementById('kanban').innerHTML = `<div class="loading"><p>Erro: ${error.message}</p></div>`;
+    return;
+  }
+
+  leads = data || [];
+  atualizarStats();
+  renderKanban();
+}
+
+function atualizarStats() {
+  document.getElementById('st-total').textContent = leads.length;
+  document.getElementById('st-sql').textContent = leads.filter(l => l.score_total >= 400).length;
+  document.getElementById('st-docs').textContent = leads.filter(l => {
+    const c = l.candidaturas?.[0];
+    return c && ['candidato','docs_pendentes'].includes(c.status);
+  }).length;
+  document.getElementById('st-taxa').textContent = leads.filter(l => {
+    const c = l.candidaturas?.[0];
+    return c && ['taxa_paga','contrato_assinado','matriculado','ativo'].includes(c.status);
+  }).length;
+  document.getElementById('leads-count').textContent = `(${leads.length} leads)`;
+}
+
+function getFiltrados() {
+  const busca = document.getElementById('busca').value.toLowerCase();
+  const fp = document.getElementById('f-programa').value;
+  const ft = document.getElementById('f-turma').value;
+  const fb = document.getElementById('f-bolsa').value;
+  return leads.filter(l => {
+    const c = l.candidaturas?.[0];
+    const matchBusca = !busca || l.nome.toLowerCase().includes(busca) || l.whatsapp.includes(busca);
+    const matchProg = !fp || c?.programa_id === fp;
+    const matchTurma = !ft || c?.turma_id === ft;
+    const matchBolsa = !fb || c?.bolsa_id === fb;
+    return matchBusca && matchProg && matchTurma && matchBolsa;
+  });
+}
+
+function filtrar() { renderKanban(); }
+
+function docBadge(status) {
+  const m = {
+    candidato:       ['#fef3c7','#92400e','Docs pendentes'],
+    docs_pendentes:  ['#fef3c7','#92400e','Docs pendentes'],
+    docs_aprovados:  ['#d1fae5','#065f46','Docs aprovados'],
+    taxa_paga:       ['#dbeafe','#1e3a8a','Taxa paga'],
+    contrato_assinado:['#ede9fe','#4c1d95','Contrato'],
+    matriculado:     ['#d1fae5','#065f46','Matriculado'],
+    ativo:           ['#d1fae5','#065f46','Aluno ativo'],
+  };
+  const [bg,tx,lb] = m[status] || ['#f1f5f9','#475569','Lead'];
+  return `<span class="doc-badge" style="background:${bg};color:${tx}">${lb}</span>`;
+}
+
+function diasSemAcesso(lead) {
+  if (!lead.atualizado_em) return null;
+  const diff = Math.floor((Date.now() - new Date(lead.atualizado_em)) / 86400000);
+  return diff;
+}
+
+function renderKanban() {
+  const filtrados = getFiltrados();
+  const board = document.getElementById('kanban');
+
+  board.innerHTML = colunas.map(col => {
+    const colSlug = colToSlug(col.nome);
+    const leadsCol = filtrados.filter(l => {
+      const leadSlug = (l.status_kanban || 'lead_novo');
+      return leadSlug === colSlug;
+    });
+
+    const cards = leadsCol.length ? leadsCol.map(l => {
+      const c = l.candidaturas?.[0];
+      const pct = col.score_maximo === 9999 ? Math.min(100, Math.round(l.score_total / 6)) : Math.min(100, Math.round((l.score_total / (col.score_maximo || 1)) * 100));
+      const dias = diasSemAcesso(l);
+      const diasClass = dias >= 5 ? 'danger' : dias >= 3 ? 'warn' : '';
+      const diasTxt = dias === 0 ? 'hoje' : dias ? `${dias}d sem acesso` : '';
+
+      return `<div class="card" draggable="true" data-id="${l.id}"
+        ondragstart="onDragStart(event,'${l.id}')"
+        ondragend="onDragEnd()"
+        onclick="abrirDetalhe('${l.id}')">
+        <div class="card-name">${l.nome}</div>
+        <div class="card-prog">${c?.programas?.nome || '—'}</div>
+        ${c ? docBadge(c.status) : ''}
+        <div class="card-score-bar">
+          <div class="card-score-fill" style="width:${pct}%;background:${col.cor}"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:500;color:${col.cor};background:${col.cor}15;padding:3px 8px;border-radius:6px">${l.score_total} pts</span>
+          <span class="card-days ${diasClass}">${diasTxt}</span>
+        </div>
+        <div class="card-foot">
+          <button class="card-wpp" onclick="event.stopPropagation();abrirWpp('${l.whatsapp}')">↗ WhatsApp</button>
+          <span style="font-size:10px;color:var(--suave)">${c?.turmas?.nome || ''}</span>
+        </div>
+      </div>`;
+    }).join('') : `<div class="col-empty">Sem leads</div>`;
+
+    return `<div class="col">
+      <div class="col-header" style="background:${col.cor}18;border:1px solid ${col.cor}35">
+        <span class="col-name" style="color:${col.cor}">${col.nome}</span>
+        <span class="col-badge" style="background:${col.cor}25;color:${col.cor}">${leadsCol.length}</span>
+      </div>
+      <div class="col-cards col-drop-zone" id="col-${col.id}"
+        ondragover="onDragOver(event,'${col.id}')"
+        ondragleave="onDragLeave('${col.id}')"
+        ondrop="onDrop(event,'${col.id}','${col.nome}')">
+        ${cards}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── DRAG & DROP ──
+function onDragStart(e, id) {
+  dragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => document.querySelector(`[data-id="${id}"]`)?.classList.add('dragging'), 0);
+}
+function onDragEnd() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('dragging'));
+  document.querySelectorAll('.col-drop-zone').forEach(c => c.classList.remove('drag-over'));
+  dragId = null;
+}
+function onDragOver(e, colId) {
+  e.preventDefault();
+  document.querySelectorAll('.col-drop-zone').forEach(c => c.classList.remove('drag-over'));
+  document.getElementById('col-'+colId)?.classList.add('drag-over');
+}
+function onDragLeave(colId) {
+  document.getElementById('col-'+colId)?.classList.remove('drag-over');
+}
+async function onDrop(e, colId, colNome) {
+  e.preventDefault();
+  document.querySelectorAll('.col-drop-zone').forEach(c => c.classList.remove('drag-over'));
+  if (!dragId) return;
+  const col = colunas.find(c => c.id === colId);
+  if (!col) return;
+  const novoStatus = col.nome.toLowerCase()
+    .replace(/ã/g,'a').replace(/â/g,'a').replace(/á/g,'a')
+    .replace(/é/g,'e').replace(/ê/g,'e').replace(/í/g,'i')
+    .replace(/ó/g,'o').replace(/ô/g,'o').replace(/ú/g,'u')
+    .replace(/ç/g,'c').replace(/\s+/g,'_');
+  await db.from('leads').update({ status_kanban: novoStatus, atualizado_em: new Date().toISOString() }).eq('id', dragId);
+  toast(`Lead movido para ${col.nome}`);
+  await carregarLeads();
+  dragId = null;
+}
+
+// ── MODAL NOVO LEAD ──
+function abrirModalNovo() {
+  document.getElementById('modal-novo').classList.add('open');
+  document.getElementById('f-nome').value = '';
+  document.getElementById('f-wpp').value = '';
+  document.getElementById('f-email').value = '';
+  document.getElementById('f-cidade').value = '';
+}
+function fecharModalNovo(e) {
+  if (e.target === document.getElementById('modal-novo'))
+    document.getElementById('modal-novo').classList.remove('open');
+}
+async function salvarLead() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const wpp = document.getElementById('f-wpp').value.trim();
+  if (!nome || !wpp) { toast('Nome e WhatsApp são obrigatórios'); return; }
+
+  const { data: lead, error } = await db.from('leads').insert({
+    tenant_id: tenantId,
+    nome, whatsapp: wpp,
+    email: document.getElementById('f-email').value,
+    cidade: document.getElementById('f-cidade').value,
+    score_total: 0,
+    status_kanban: 'lead_novo',
+    origem_id: document.getElementById('f-origem-novo').value || null,
+  }).select().single();
+
+  if (error) { toast('Erro ao salvar: ' + error.message); return; }
+
+  const progId = document.getElementById('f-prog-novo').value;
+  const turmaId = document.getElementById('f-turma-novo').value;
+  const bolsaId = document.getElementById('f-bolsa-novo').value;
+
+  if (progId || turmaId || bolsaId) {
+    await db.from('candidaturas').insert({
+      tenant_id: tenantId,
+      lead_id: lead.id,
+      programa_id: progId || null,
+      turma_id: turmaId || null,
+      bolsa_id: bolsaId || null,
+      status: 'candidato'
+    });
+  }
+
+  document.getElementById('modal-novo').classList.remove('open');
+  toast('Lead cadastrado com sucesso!');
+  await carregarLeads();
+}
+
+// ── MODAL DETALHE (EDITÁVEL) ──
+function colToSlug(nome) {
+  return nome.toLowerCase()
+    .replace(/ã/g,'a').replace(/â/g,'a').replace(/á/g,'a').replace(/à/g,'a')
+    .replace(/é/g,'e').replace(/ê/g,'e').replace(/è/g,'e')
+    .replace(/í/g,'i').replace(/ó/g,'o').replace(/ô/g,'o').replace(/ú/g,'u')
+    .replace(/ç/g,'c').replace(/\s+/g,'_');
+}
+
+function abrirDetalhe(id) {
+  const l = leads.find(x => x.id === id);
+  if (!l) return;
+  const c = l.candidaturas?.[0];
+
+  const linkPersonalizado = `mestrado.llew.com.br/investimento?w=${l.whatsapp}`;
+
+  // Opções de programa, turma, bolsa e status
+  const optsPrograma = `<option value="">— selecione —</option>` +
+    programas.map(p => `<option value="${p.id}" ${c?.programa_id === p.id ? 'selected' : ''}>${p.nome}</option>`).join('');
+
+  const optsTurma = `<option value="">— selecione —</option>` +
+    turmas.map(t => `<option value="${t.id}" ${c?.turma_id === t.id ? 'selected' : ''}>${t.nome}</option>`).join('');
+
+  const optsBolsa = `<option value="">— selecione —</option>` +
+    bolsas.map(b => `<option value="${b.id}" ${c?.bolsa_id === b.id ? 'selected' : ''}>${b.nome}</option>`).join('');
+
+  const optsOrigem = `<option value="">— selecione —</option>` +
+    origens.map(o => `<option value="${o.id}" ${l.origem_id === o.id ? 'selected' : ''}>${o.nome}</option>`).join('');
+
+  const STATUS_PIPELINE = [
+    ['lead_novo','Lead Novo'],['pre_matricula','Pré-matrícula'],['candidato','Candidato'],
+    ['docs_pendentes','Docs Pendentes'],['docs_aprovados','Docs Aprovados'],
+    ['taxa_paga','Taxa Paga'],['contrato_assinado','Contrato Assinado'],
+    ['aluno_matriculado','Aluno Matriculado'],['aluno_ativo','Aluno Ativo'],['concluido','Concluído']
+  ];
+  const optsStatus = STATUS_PIPELINE.map(([v,lb]) =>
+    `<option value="${v}" ${(l.status_kanban||'lead_novo') === v ? 'selected' : ''}>${lb}</option>`
+  ).join('');
+
+  const moveGrid = colunas.map(col => {
+    const isCurrent = colToSlug(col.nome) === (l.status_kanban || 'lead_novo');
+    return `<button class="move-btn ${isCurrent ? 'current' : ''}"
+      style="border-color:${col.cor};color:${col.cor};${isCurrent ? 'background:'+col.cor+'20;' : ''}"
+      onclick="moverLead('${l.id}','${col.id}','${col.nome}')">
+      ${isCurrent ? '✓ ' : ''}${col.nome}
+    </button>`;
+  }).join('');
+
+  document.getElementById('modal-detalhe-content').innerHTML = `
+    <div class="modal-header">
+      <div>
+        <h3 id="detalhe-nome-header">${l.nome}</h3>
+        <span style="font-size:11px;color:var(--suave)">${l.score_total} pts · ${(l.status_kanban||'lead_novo').replace(/_/g,' ')}</span>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modal-detalhe').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <p style="font-size:11px;font-weight:600;color:var(--azul);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;border-bottom:1.5px solid var(--azul);padding-bottom:5px">Dados do Lead</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome completo</label>
+          <input type="text" id="d-nome" value="${l.nome || ''}" placeholder="Nome do lead">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="d-wpp" value="${l.whatsapp || ''}" placeholder="5511999999999" style="flex:1">
+            <a href="https://wa.me/${l.whatsapp}" target="_blank"
+              style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:7px;background:#25d366;color:#fff;text-decoration:none;font-size:16px;flex-shrink:0" title="Abrir WhatsApp">↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="d-email" value="${l.email || ''}" placeholder="email@exemplo.com">
+        </div>
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" id="d-cidade" value="${l.cidade || ''}" placeholder="São Paulo">
+        </div>
+      </div>
+
+      <p style="font-size:11px;font-weight:600;color:var(--azul);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;border-bottom:1.5px solid var(--azul);padding-bottom:5px">Candidatura</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Programa</label>
+          <select id="d-programa">${optsPrograma}</select>
+        </div>
+        <div class="form-group">
+          <label>Turma</label>
+          <select id="d-turma">${optsTurma}</select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bolsa</label>
+          <select id="d-bolsa">${optsBolsa}</select>
+        </div>
+        <div class="form-group">
+          <label>Origem</label>
+          <select id="d-origem">${optsOrigem}</select>
+        </div>
+      </div>
+
+      <p style="font-size:11px;font-weight:600;color:var(--azul);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;border-bottom:1.5px solid var(--azul);padding-bottom:5px">Pipeline</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status no pipeline</label>
+          <select id="d-status">${optsStatus}</select>
+        </div>
+        <div class="form-group">
+          <label>Score atual</label>
+          <input type="number" value="${l.score_total || 0}" disabled
+            style="background:#f8fafc;color:var(--suave);cursor:not-allowed">
+        </div>
+      </div>
+
+      <p style="font-size:11px;font-weight:600;color:var(--azul);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Mover para fase</p>
+      <div class="move-grid">${moveGrid}</div>
+
+      <p style="font-size:11px;font-weight:600;color:var(--azul);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Link rastreável para enviar</p>
+      <div class="link-box">
+        <code>${linkPersonalizado}</code>
+        <button class="link-copy" onclick="copiarLink('${linkPersonalizado}')">Copiar</button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-detalhe').classList.remove('open')">Fechar</button>
+      <button class="btn btn-outline" onclick="abrirWpp('${l.whatsapp}')" style="color:#059669;border-color:#059669">↗ WhatsApp</button>
+      <button class="btn btn-primary" id="d-salvar-btn" onclick="salvarDetalhe('${l.id}','${c?.id || ''}')">Salvar alterações</button>
+    </div>`;
+
+  document.getElementById('modal-detalhe').classList.add('open');
+}
+
+async function salvarDetalhe(leadId, candidaturaId) {
+  const btn = document.getElementById('d-salvar-btn');
+  btn.textContent = 'Salvando...';
+  btn.disabled = true;
+
+  const nome   = document.getElementById('d-nome').value.trim();
+  const wpp    = document.getElementById('d-wpp').value.trim();
+  const email  = document.getElementById('d-email').value.trim();
+  const cidade = document.getElementById('d-cidade').value.trim();
+  const status = document.getElementById('d-status').value;
+  const origId = document.getElementById('d-origem').value;
+  const progId = document.getElementById('d-programa').value;
+  const turmaId= document.getElementById('d-turma').value;
+  const bolsaId= document.getElementById('d-bolsa').value;
+
+  if (!nome || !wpp) { toast('Nome e WhatsApp são obrigatórios'); btn.textContent='Salvar alterações'; btn.disabled=false; return; }
+
+  try {
+    // 1. Atualiza lead
+    const { error: errLead } = await db.from('leads').update({
+      nome, whatsapp: wpp,
+      email: email || null,
+      cidade: cidade || null,
+      status_kanban: status,
+      origem_id: origId || null,
+      atualizado_em: new Date().toISOString()
+    }).eq('id', leadId);
+    if (errLead) throw errLead;
+
+    // 2. Candidatura — upsert
+    if (progId || turmaId || bolsaId) {
+      const candData = {
+        tenant_id: tenantId, lead_id: leadId,
+        programa_id: progId || null,
+        turma_id: turmaId || null,
+        bolsa_id: bolsaId || null,
+        atualizado_em: new Date().toISOString()
+      };
+      if (candidaturaId) {
+        const { error } = await db.from('candidaturas').update(candData).eq('id', candidaturaId);
+        if (error) throw error;
+      } else {
+        const { error } = await db.from('candidaturas').insert({ ...candData, status: 'candidato', criado_em: new Date().toISOString() });
+        if (error) throw error;
+      }
+    }
+
+    document.getElementById('modal-detalhe').classList.remove('open');
+    toast('Lead atualizado com sucesso!');
+    await carregarLeads();
+
+  } catch(err) {
+    toast('Erro ao salvar: ' + (err.message || err));
+    btn.textContent = 'Salvar alterações';
+    btn.disabled = false;
+  }
+}
+
+function fecharDetalhe(e) {
+  if (e.target === document.getElementById('modal-detalhe'))
+    document.getElementById('modal-detalhe').classList.remove('open');
+}
+
+async function moverLead(leadId, colId, colNome) {
+  const col = colunas.find(c => c.id === colId);
+  if (!col) return;
+  const novoStatus = colToSlug(col.nome);
+  await db.from('leads').update({ status_kanban: novoStatus, atualizado_em: new Date().toISOString() }).eq('id', leadId);
+  document.getElementById('modal-detalhe').classList.remove('open');
+  toast(`Lead movido para ${colNome}`);
+  await carregarLeads();
+}
+
+// ── UTILS ──
+function abrirWpp(num) { window.open(`https://wa.me/${num}`, '_blank'); }
+
+function copiarLink(link) {
+  navigator.clipboard.writeText('https://' + link).then(() => toast('Link copiado!'));
+}
+
+function showSection(s) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  const main = document.querySelector('main.main');
+  if (main) main.style.display = ['kanban','leads'].includes(s) ? '' : 'none';
+  document.getElementById('section-kanban').style.display = s === 'kanban' ? '' : 'none';
+  document.getElementById('section-templates').style.display = s === 'templates' ? '' : 'none';
+  document.getElementById('section-alunos').style.display = s === 'alunos' ? '' : 'none';
+  if (s === 'kanban') carregarLeads();
+  if (s === 'templates') carregarTemplates();
+  if (s === 'alunos') carregarAlunos();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// TELA ALUNOS
+// ============================================================
+let todosAlunos = [];
+let alunosFiltrados = [];
+let alunosPagAtual = 1;
+const ALUNOS_POR_PAG = 50;
+let alunosOrdem = { campo: 'nome', asc: true };
+
+const STATUS_LABELS_ALUNOS = {
+  aluno_ativo:       ['#d1fae5','#065f46','Aluno Ativo'],
+  concluido:         ['#e0e7ff','#3730a3','Concluído'],
+  aluno_matriculado: ['#dbeafe','#1e3a8a','Matriculado'],
+  taxa_paga:         ['#fef9c3','#713f12','Taxa Paga'],
+  contrato_assinado: ['#ede9fe','#4c1d95','Contrato'],
+  docs_aprovados:    ['#d1fae5','#065f46','Docs OK'],
+  docs_pendentes:    ['#fef3c7','#92400e','Docs Pend.'],
+  candidato:         ['#fef3c7','#92400e','Candidato'],
+  pre_matricula:     ['#e0f2fe','#0369a1','Pré-matrícula'],
+  lead_novo:         ['#f1f5f9','#475569','Lead'],
+};
+
+async function carregarAlunos() {
+  document.getElementById('alunos-tbody').innerHTML =
+    '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--suave)">Carregando...</td></tr>';
+
+  // Carregar em lotes para suportar 20k registros
+  let todos = [];
+  let from = 0;
+  const LOTE = 1000;
+
+  while (true) {
+    const { data, error } = await db
+      .from('leads')
+      .select('id,nome,whatsapp,email,cidade,status_kanban,consultor_nome,origem_convenio,turma_origem,score_total,candidaturas(programas(nome),turmas(nome))')
+      .eq('tenant_id', tenantId)
+      .order('nome')
+      .range(from, from + LOTE - 1);
+
+    if (error) {
+      document.getElementById('alunos-tbody').innerHTML =
+        '<tr><td colspan="9" style="text-align:center;padding:40px;color:#dc2626">Erro: ' + error.message + '</td></tr>';
+      return;
+    }
+    todos = todos.concat(data || []);
+    if (!data || data.length < LOTE) break;
+    from += LOTE;
+  }
+
+  todosAlunos = todos;
+  document.getElementById('alunos-count').textContent = '(' + todosAlunos.length.toLocaleString('pt-BR') + ' registros)';
+
+  // Popular filtros dinâmicos
+  popularFiltroPrograma();
+  popularFiltroConsultor();
+
+  filtrarAlunos();
+  renderAlunosStats();
+}
+
+function popularFiltroPrograma() {
+  const progs = [...new Set(todosAlunos
+    .map(a => a.candidaturas?.[0]?.programas?.nome)
+    .filter(Boolean))].sort();
+  const sel = document.getElementById('al-programa');
+  sel.innerHTML = '<option value="">Todos os programas</option>' +
+    progs.map(p => '<option value="' + p + '">' + p + '</option>').join('');
+}
+
+function popularFiltroConsultor() {
+  const cons = [...new Set(todosAlunos
+    .map(a => a.consultor_nome)
+    .filter(Boolean))].sort();
+  const sel = document.getElementById('al-consultor');
+  sel.innerHTML = '<option value="">Todos os consultores</option>' +
+    cons.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+}
+
+function filtrarAlunos() {
+  const busca    = (document.getElementById('al-busca')?.value || '').toLowerCase();
+  const status   = document.getElementById('al-status')?.value || '';
+  const programa = document.getElementById('al-programa')?.value || '';
+  const consultor= document.getElementById('al-consultor')?.value || '';
+  const base     = document.getElementById('al-base')?.value || '';
+
+  alunosFiltrados = todosAlunos.filter(a => {
+    const progNome = a.candidaturas?.[0]?.programas?.nome || '';
+    const matchBusca = !busca ||
+      (a.nome||'').toLowerCase().includes(busca) ||
+      (a.email||'').toLowerCase().includes(busca) ||
+      (a.whatsapp||'').includes(busca);
+    const matchStatus   = !status   || a.status_kanban === status;
+    const matchPrograma = !programa || progNome === programa;
+    const matchConsultor= !consultor|| (a.consultor_nome||'') === consultor;
+    const matchBase     = !base     || (a.turma_origem||'').includes(base) ||
+                          (base === 'Atual' && !a.turma_origem?.includes('2019')) ||
+                          (base === 'Histórica' && a.turma_origem?.includes('2019'));
+    return matchBusca && matchStatus && matchPrograma && matchConsultor && matchBase;
+  });
+
+  // Ordenação
+  alunosFiltrados.sort((a, b) => {
+    let va = '', vb = '';
+    if (alunosOrdem.campo === 'nome') { va = a.nome||''; vb = b.nome||''; }
+    else if (alunosOrdem.campo === 'programa') {
+      va = a.candidaturas?.[0]?.programas?.nome||'';
+      vb = b.candidaturas?.[0]?.programas?.nome||'';
+    }
+    else if (alunosOrdem.campo === 'status_kanban') { va = a.status_kanban||''; vb = b.status_kanban||''; }
+    return alunosOrdem.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+
+  alunosPagAtual = 1;
+  renderAlunosTabela();
+  renderAlunosPaginacao();
+}
+
+function ordenarAlunos(campo) {
+  if (alunosOrdem.campo === campo) {
+    alunosOrdem.asc = !alunosOrdem.asc;
+  } else {
+    alunosOrdem = { campo, asc: true };
+  }
+  filtrarAlunos();
+}
+
+function limparFiltrosAlunos() {
+  document.getElementById('al-busca').value = '';
+  document.getElementById('al-status').value = '';
+  document.getElementById('al-programa').value = '';
+  document.getElementById('al-consultor').value = '';
+  document.getElementById('al-base').value = '';
+  filtrarAlunos();
+}
+
+function renderAlunosTabela() {
+  const inicio = (alunosPagAtual - 1) * ALUNOS_POR_PAG;
+  const pagina = alunosFiltrados.slice(inicio, inicio + ALUNOS_POR_PAG);
+
+  if (!pagina.length) {
+    document.getElementById('alunos-tbody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--suave)">Nenhum aluno encontrado com estes filtros.</td></tr>';
+    return;
+  }
+
+  document.getElementById('alunos-tbody').innerHTML = pagina.map(a => {
+    const prog  = a.candidaturas?.[0]?.programas?.nome || '—';
+    const turma = a.candidaturas?.[0]?.turmas?.nome || a.turma_origem || '—';
+    const st    = STATUS_LABELS_ALUNOS[a.status_kanban] || ['#f1f5f9','#475569', a.status_kanban || '—'];
+    const bg = st[0], tx = st[1], lb = st[2];
+    const wppBtn = a.whatsapp
+      ? `<button class="aluno-wpp" onclick="event.stopPropagation();abrirWpp('${a.whatsapp}')">&#8599; ${a.whatsapp}</button>`
+      : '<span style="color:var(--suave)">—</span>';
+    const loc = (a.cidade || '—');
+    return `<tr onclick="abrirDetalhe('${a.id}')">
+      <td><strong>${a.nome || '—'}</strong></td>
+      <td>${wppBtn}</td>
+      <td style="font-size:12px;color:var(--suave);max-width:180px;overflow:hidden;text-overflow:ellipsis">${a.email || '—'}</td>
+      <td style="font-size:12px">${loc}</td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">${prog}</td>
+      <td style="font-size:12px;color:var(--suave)">${turma}</td>
+      <td style="font-size:12px;color:var(--suave)">${a.consultor_nome || '—'}</td>
+      <td style="font-size:12px;color:var(--suave)">${a.origem_convenio || '—'}</td>
+      <td><span class="status-badge" style="background:${bg};color:${tx}">${lb}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAlunosPaginacao() {
+  const total    = alunosFiltrados.length;
+  const totalPag = Math.ceil(total / ALUNOS_POR_PAG);
+  const inicio   = (alunosPagAtual - 1) * ALUNOS_POR_PAG + 1;
+  const fim      = Math.min(alunosPagAtual * ALUNOS_POR_PAG, total);
+
+  document.getElementById('al-pag-info').textContent =
+    total === 0 ? '0 registros' :
+    inicio + '–' + fim + ' de ' + total.toLocaleString('pt-BR') + ' registros' +
+    (alunosFiltrados.length < todosAlunos.length ? ' (filtrado)' : '');
+
+  document.getElementById('al-btn-prev').disabled = alunosPagAtual === 1;
+  document.getElementById('al-btn-next').disabled = alunosPagAtual === totalPag || totalPag === 0;
+
+  // Páginas numeradas (máximo 7 botões)
+  const pages = [];
+  const delta = 2;
+  for (let i = 1; i <= totalPag; i++) {
+    if (i === 1 || i === totalPag || (i >= alunosPagAtual - delta && i <= alunosPagAtual + delta)) {
+      pages.push(i);
+    }
+  }
+  const pagesEl = document.getElementById('al-pag-pages');
+  let html = '';
+  let prev = 0;
+  pages.forEach(p => {
+    if (prev && p - prev > 1) html += '<span style="color:var(--suave);padding:0 4px">…</span>';
+    html += '<button onclick="irPagAlunos(' + p + ')" style="' +
+      (p === alunosPagAtual ? 'background:var(--azul);color:#fff;border-color:var(--azul);' : '') +
+      '">' + p + '</button>';
+    prev = p;
+  });
+  pagesEl.innerHTML = html;
+}
+
+function pagAlunos(dir) {
+  const totalPag = Math.ceil(alunosFiltrados.length / ALUNOS_POR_PAG);
+  alunosPagAtual = Math.max(1, Math.min(totalPag, alunosPagAtual + dir));
+  renderAlunosTabela();
+  renderAlunosPaginacao();
+  window.scrollTo(0, 0);
+}
+
+function irPagAlunos(p) {
+  alunosPagAtual = p;
+  renderAlunosTabela();
+  renderAlunosPaginacao();
+  window.scrollTo(0, 0);
+}
+
+function renderAlunosStats() {
+  const ativos    = todosAlunos.filter(a => a.status_kanban === 'aluno_ativo').length;
+  const concluidos= todosAlunos.filter(a => a.status_kanban === 'concluido').length;
+  const semWpp    = todosAlunos.filter(a => !a.whatsapp).length;
+  const total     = todosAlunos.length;
+
+  document.getElementById('alunos-stats').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Total de registros</div><div class="stat-val">' + total.toLocaleString('pt-BR') + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Alunos Ativos</div><div class="stat-val ok">' + ativos.toLocaleString('pt-BR') + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Concluídos</div><div class="stat-val" style="color:#3730a3">' + concluidos.toLocaleString('pt-BR') + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Sem WhatsApp</div><div class="stat-val" style="color:#d97706">' + semWpp.toLocaleString('pt-BR') + '</div></div>';
+}
+
+function exportarAlunos() {
+  const cols = ['Nome','WhatsApp','Email','Cidade','Estado','Programa','Turma','Consultor','Convênio','Status'];
+  const rows = alunosFiltrados.map(a => [
+    a.nome||'', a.whatsapp||'', a.email||'',
+    a.cidade||'',
+    a.candidaturas?.[0]?.programas?.nome||'',
+    a.candidaturas?.[0]?.turmas?.nome||a.turma_origem||'',
+    a.consultor_nome||'', a.origem_convenio||'',
+    a.status_kanban||''
+  ].map(v => '"'+String(v).replace(/"/g,'""')+'"').join(','));
+
+  const csv = [cols.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'alunos_llew_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV exportado com ' + alunosFiltrados.length.toLocaleString('pt-BR') + ' registros!');
+}
+
+// ── TEMPLATES ──
+let todosTemplates = [];
+let catAtiva = 'todos';
+
+const CATS = {
+  todos:        { label: 'Todos', cor: '#003366' },
+  investimento: { label: 'Investimento', cor: '#d97706' },
+  documentos:   { label: 'Documentos', cor: '#2563eb' },
+  apresentacao: { label: 'Apresentação', cor: '#7c3aed' },
+  acesso_ava:   { label: 'Acesso AVA', cor: '#059669' },
+  matricula:    { label: 'Matrícula', cor: '#db2777' },
+  boas_vindas:  { label: 'Boas-vindas', cor: '#10b981' },
+  contrato:     { label: 'Contrato', cor: '#ea580c' },
+  reengajamento:{ label: 'Reengajamento', cor: '#dc2626' },
+  geral:        { label: 'Geral', cor: '#64748b' },
+};
+
+async function carregarTemplates() {
+  document.getElementById('tpl-grid').innerHTML = '<div class="loading"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><p style="margin-top:12px">Carregando templates...</p></div>';
+
+  const { data, error } = await db
+    .from('templates')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('situacao')
+    .order('nome');
+
+  if (error) { document.getElementById('tpl-grid').innerHTML = `<div class="tpl-empty">Erro: ${error.message}</div>`; return; }
+
+  todosTemplates = data || [];
+  document.getElementById('tpl-total').textContent = `(${todosTemplates.length} templates)`;
+
+  // Montar abas de categorias
+  const cats = ['todos', ...Object.keys(CATS).filter(k => k !== 'todos' && todosTemplates.some(t => t.situacao === k))];
+  document.getElementById('cat-tabs').innerHTML = cats.map(cat => {
+    const c = CATS[cat] || { label: cat, cor: '#64748b' };
+    const count = cat === 'todos' ? todosTemplates.length : todosTemplates.filter(t => t.situacao === cat).length;
+    return `<button class="cat-tab ${cat === catAtiva ? 'active' : ''}" onclick="setCat('${cat}',this)">${c.label} (${count})</button>`;
+  }).join('');
+
+  renderTemplates();
+}
+
+function setCat(cat, el) {
+  catAtiva = cat;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTemplates();
+}
+
+function filtrarTemplates() { renderTemplates(); }
+
+function renderTemplates() {
+  const busca = (document.getElementById('tpl-busca')?.value || '').toLowerCase();
+  let lista = todosTemplates;
+  if (catAtiva !== 'todos') lista = lista.filter(t => t.situacao === catAtiva);
+  if (busca) lista = lista.filter(t => t.nome.toLowerCase().includes(busca) || t.conteudo?.toLowerCase().includes(busca));
+
+  document.getElementById('tpl-counter').textContent = `${lista.length} template${lista.length !== 1 ? 's' : ''} encontrado${lista.length !== 1 ? 's' : ''}`;
+
+  if (!lista.length) {
+    document.getElementById('tpl-grid').innerHTML = '<div class="tpl-empty">Nenhum template encontrado</div>';
+    return;
+  }
+
+  document.getElementById('tpl-grid').innerHTML = lista.map(t => {
+    const cat = CATS[t.situacao] || { label: t.situacao, cor: '#64748b' };
+    const preview = (t.conteudo || '').replace(/\n/g,' ').trim();
+    const trigger = t.nome.split('—')[0].trim();
+    const descricao = t.nome.split('—').slice(1).join('—').trim() || '';
+    return `<div class="tpl-card ${t.ativo ? '' : 'inativo'}" onclick="abrirModalTpl('${t.id}')">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div class="tpl-trigger">${trigger}</div>
+        <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${cat.cor}15;color:${cat.cor};font-weight:500;text-align:center">${cat.label}</span>
+      </div>
+      <div class="tpl-preview">
+        ${descricao ? `<strong>${descricao.substring(0,60)}${descricao.length>60?'...':''}</strong>` : ''}
+        ${preview.substring(0,120)}${preview.length>120?'...':''}
+      </div>
+      <div class="tpl-actions">
+        <button class="btn btn-outline" style="font-size:11px;padding:4px 12px" onclick="event.stopPropagation();abrirModalTpl('${t.id}')">✏ Editar</button>
+        <button class="tpl-toggle ${t.ativo ? 'ativo' : 'inativo'}" onclick="event.stopPropagation();toggleTemplate('${t.id}',${t.ativo})">
+          ${t.ativo ? '✓ Ativo' : '✕ Inativo'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleTemplate(id, atual) {
+  await db.from('templates').update({ ativo: !atual }).eq('id', id);
+  toast(atual ? 'Template desativado' : 'Template ativado');
+  await carregarTemplates();
+}
+
+// ── EDITAR TEMPLATE ──
+let tplEditandoId = null;
+
+function abrirModalTpl(id) {
+  const t = todosTemplates.find(x => x.id === id);
+  if (!t) return;
+  tplEditandoId = id;
+
+  const trigger = t.nome.split('—')[0].trim();
+  document.getElementById('tpl-modal-titulo').textContent = `Editar: ${trigger}`;
+  document.getElementById('tpl-edit-trigger').value = trigger;
+  document.getElementById('tpl-edit-situacao').value = t.situacao || 'geral';
+  document.getElementById('tpl-edit-conteudo').value = t.conteudo || '';
+  document.getElementById('tpl-chars').textContent = (t.conteudo || '').length + ' caracteres';
+  document.getElementById('tpl-del-btn').textContent = t.ativo ? 'Desativar template' : 'Reativar template';
+  document.getElementById('tpl-modal-bg').classList.add('open');
+}
+
+function fecharModalTpl(e) {
+  if (e.target === document.getElementById('tpl-modal-bg'))
+    document.getElementById('tpl-modal-bg').classList.remove('open');
+}
+
+function inserirVar(v) {
+  const ta = document.getElementById('tpl-edit-conteudo');
+  const pos = ta.selectionStart;
+  const atual = ta.value;
+  ta.value = atual.substring(0, pos) + v + atual.substring(pos);
+  ta.focus();
+  ta.setSelectionRange(pos + v.length, pos + v.length);
+  document.getElementById('tpl-chars').textContent = ta.value.length + ' caracteres';
+}
+
+async function salvarTemplate() {
+  if (!tplEditandoId) return;
+  const trigger = document.getElementById('tpl-edit-trigger').value.trim();
+  const situacao = document.getElementById('tpl-edit-situacao').value;
+  const conteudo = document.getElementById('tpl-edit-conteudo').value;
+  const t = todosTemplates.find(x => x.id === tplEditandoId);
+  const descricao = t?.nome.split('—').slice(1).join('—').trim() || '';
+  const nome = descricao ? `${trigger} — ${descricao}` : trigger;
+
+  const { error } = await db.from('templates')
+    .update({ nome, situacao, conteudo, ativo: true })
+    .eq('id', tplEditandoId);
+
+  if (error) { toast('Erro ao salvar: ' + error.message); return; }
+
+  document.getElementById('tpl-modal-bg').classList.remove('open');
+  toast('Template salvo com sucesso!');
+  await carregarTemplates();
+}
+
+async function desativarTemplate() {
+  if (!tplEditandoId) return;
+  const t = todosTemplates.find(x => x.id === tplEditandoId);
+  if (!t) return;
+  const novoStatus = !t.ativo;
+  await db.from('templates').update({ ativo: novoStatus }).eq('id', tplEditandoId);
+  document.getElementById('tpl-modal-bg').classList.remove('open');
+  toast(novoStatus ? 'Template reativado!' : 'Template desativado!');
+  await carregarTemplates();
+}
+
+// START
+init();
+
+// ============================================================
+// MÓDULO ADMIN
+// ============================================================
+const ADMIN_PIN = 'llew2026@';
+let adminLogado = false;
+let dadosPlanilha = [], colunasPlanilha = [], mapeamento = {}, linhasProcessadas = [];
+
+const CAMPOS_SISTEMA = [
+  { key:'nome',       label:'Nome',          obrig:true  },
+  { key:'whatsapp',   label:'WhatsApp',      obrig:false },
+  { key:'email',      label:'Email',         obrig:false },
+  { key:'cidade',     label:'Cidade',        obrig:false },
+  { key:'estado',     label:'Estado',        obrig:false },
+  { key:'consultor',  label:'Consultor',     obrig:false },
+  { key:'programa',   label:'Programa',      obrig:false },
+  { key:'turma',      label:'Turma (data)',  obrig:false },
+  { key:'convenio',   label:'Convênio',      obrig:false },
+  { key:'status',     label:'Status',        obrig:false },
+  { key:'canal',      label:'Canal/Origem',  obrig:false },
+  { key:'base',       label:'Base',          obrig:false },
+  { key:'id_externo', label:'ID Externo',    obrig:false },
+];
+
+const STATUS_MAP = {
+  'active':'aluno_ativo','ativo':'aluno_ativo',
+  'concluido':'concluido','concluído':'concluido',
+  'cancelled':'concluido','cancelado':'concluido',
+  'matriculado':'aluno_matriculado','lead':'lead_novo',
+};
+
+function abrirAdmin() {
+  if (adminLogado) { mostrarSecaoAdmin(); return; }
+  document.getElementById('modal-admin-senha').classList.add('open');
+  document.getElementById('admin-senha-input').value = '';
+  document.getElementById('admin-senha-erro').style.display = 'none';
+  setTimeout(() => document.getElementById('admin-senha-input').focus(), 150);
+}
+
+function verificarSenhaAdmin() {
+  if (document.getElementById('admin-senha-input').value === ADMIN_PIN) {
+    adminLogado = true;
+    document.getElementById('modal-admin-senha').classList.remove('open');
+    mostrarSecaoAdmin();
+  } else {
+    document.getElementById('admin-senha-erro').style.display = 'block';
+    document.getElementById('admin-senha-input').value = '';
+    document.getElementById('admin-senha-input').focus();
+  }
+}
+
+function fecharModalAdmin() {
+  document.getElementById('modal-admin-senha').classList.remove('open');
+}
+
+function mostrarSecaoAdmin() {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  ['section-kanban','section-templates','section-alunos'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const main = document.querySelector('main.main');
+  if (main) main.style.display = 'none';
+  document.getElementById('section-admin').style.display = '';
+}
+
+function sairAdmin() {
+  adminLogado = false;
+  document.getElementById('section-admin').style.display = 'none';
+  const main = document.querySelector('main.main');
+  if (main) main.style.display = '';
+  showSection('kanban');
+}
+
+function mostrarImportador() {
+  document.getElementById('painel-importador').style.display = '';
+  irParaStep(1);
+}
+
+function irParaStep(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = i === n ? '' : 'none';
+    const tab = document.getElementById('step-tab-' + i);
+    if (tab) tab.className = 'imp-step' + (i === n ? ' active' : i < n ? ' done' : '');
+  });
+}
+
+function onFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) carregarArquivo(e.dataTransfer.files[0]);
+}
+
+async function carregarArquivo(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const info = document.getElementById('file-info');
+  info.style.display = '';
+  info.innerHTML = '⟳ Lendo <strong>' + file.name + '</strong>...';
+  try {
+    if (ext === 'csv') {
+      processarCSV(await file.text(), file.name);
+    } else if (ext === 'xls' || ext === 'xlsx') {
+      await processarXLS(file);
+    } else {
+      throw new Error('Use CSV ou XLS/XLSX');
+    }
+  } catch(e) {
+    info.innerHTML = '<span style="color:#dc2626">Erro: ' + e.message + '</span>';
+  }
+}
+
+function processarCSV(text, nome) {
+  const delim = text.split(';').length > text.split(',').length ? ';' : ',';
+  const linhas = text.split(/\r?\n/).filter(l => l.trim());
+  if (linhas.length < 2) throw new Error('Arquivo vazio');
+  colunasPlanilha = linhas[0].split(delim).map(c => c.replace(/"/g,'').trim());
+  dadosPlanilha = linhas.slice(1).map(l => {
+    const vals = l.split(delim).map(v => v.replace(/"/g,'').trim());
+    const obj = {};
+    colunasPlanilha.forEach((c,i) => obj[c] = vals[i] || '');
+    return obj;
+  }).filter(row => Object.values(row).some(v => v));
+  finalizarLeitura(nome);
+}
+
+async function processarXLS(file) {
+  if (!window.XLSX) {
+    await new Promise((res,rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res; s.onerror = () => rej(new Error('Falha ao carregar SheetJS'));
+      document.head.appendChild(s);
+    });
+  }
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type:'array' });
+  const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+  if (!arr.length) throw new Error('Planilha vazia');
+  colunasPlanilha = Object.keys(arr[0]);
+  dadosPlanilha = arr;
+  finalizarLeitura(file.name);
+}
+
+function finalizarLeitura(nome) {
+  document.getElementById('file-info').innerHTML =
+    '✓ <strong>' + nome + '</strong> — ' + dadosPlanilha.length.toLocaleString('pt-BR') + ' registros · ' + colunasPlanilha.length + ' colunas';
+  mapeamento = {};
+  const autoMap = {
+    nome:['nome','name','aluno'], whatsapp:['telefone','phone','whatsapp','celular','tel'],
+    email:['email','mail'], cidade:['cidade','city'], estado:['estado','uf'],
+    consultor:['consultor','advisor'], programa:['programa','program','curso'],
+    turma:['turma','turm','class','start'],
+    convenio:['convenio','conv'],
+    status:['status','situacao'], canal:['canal','source'],
+    base:['base'], id_externo:['id'],
+  };
+  colunasPlanilha.forEach((col, idx) => {
+    const cn = col.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    CAMPOS_SISTEMA.forEach(campo => {
+      if (mapeamento[campo.key] !== undefined) return;
+      if ((autoMap[campo.key]||[]).some(p => cn.includes(p))) mapeamento[campo.key] = idx;
+    });
+  });
+  renderMapaColunas();
+  irParaStep(2);
+}
+
+function renderMapaColunas() {
+  document.getElementById('mapa-colunas').innerHTML = CAMPOS_SISTEMA.map(campo => {
+    const opts = '<option value="">— ignorar —</option>' +
+      colunasPlanilha.map((c,i) =>
+        '<option value="' + i + '"' + (mapeamento[campo.key] === i ? ' selected' : '') + '>' + c + '</option>'
+      ).join('');
+    return '<div class="map-field"><label>' + campo.label + (campo.obrig?' *':'') + '</label>' +
+      '<select onchange="mapeamento[\''+campo.key+'\']=(this.value===\'\') ? undefined : parseInt(this.value)">' + opts + '</select></div>';
+  }).join('');
+}
+
+function normalizarTelefone(tel) {
+  if (!tel) return '';
+  let t = String(tel).replace(/[^\d]/g,'');
+  if (t.startsWith('55') && t.length >= 12) return t;
+  if (t.length === 11 || t.length === 10) return '55' + t;
+  return t || '';
+}
+
+function normalizarStatus(s) {
+  if (!s) return 'lead_novo';
+  const sn = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+  for (const [k,v] of Object.entries(STATUS_MAP)) {
+    if (sn.includes(k.replace(/[^a-z]/g,''))) return v;
+  }
+  return 'lead_novo';
+}
+
+function normalizarPrograma(prog) {
+  if (!prog || !programas.length) return null;
+  const pl = prog.toLowerCase();
+  const match = programas.find(p =>
+    (pl.includes('healthcare') && p.nome.toLowerCase().includes('sa')) ||
+    (pl.includes('business administration') && p.nome.toLowerCase().includes('administra')) ||
+    (pl.includes('digital marketing') && p.nome.toLowerCase().includes('marketing')) ||
+    (pl.includes('international business') && p.nome.toLowerCase().includes('internacion')) ||
+    (pl.includes('business development') && p.nome.toLowerCase().includes('neg')) ||
+    (pl.includes('emergent technologies') && p.nome.toLowerCase().includes('tecnolog')) ||
+    (pl.includes('legal studies') && p.nome.toLowerCase().includes('jur')) ||
+    (pl.includes('organizational psychology') && p.nome.toLowerCase().includes('psicolog'))
+  );
+  return match ? match.id : null;
+}
+
+function normalizarTurma(turmaRaw) {
+  // Tenta encontrar turma no banco por data aproximada
+  if (!turmaRaw || !turmas.length) return null;
+  // Tenta parsear data da planilha (dd/mm/yyyy ou yyyy-mm-dd)
+  let d = null;
+  if (/\d{2}\/\d{2}\/\d{4}/.test(turmaRaw)) {
+    const [dia, mes, ano] = turmaRaw.split('/');
+    d = new Date(ano, mes-1, dia);
+  } else if (/\d{4}-\d{2}-\d{2}/.test(turmaRaw)) {
+    d = new Date(turmaRaw);
+  }
+  if (!d) return null;
+  // Busca turma com data de início no mesmo mês/ano
+  const match = turmas.find(t => {
+    const td = new Date(t.data_inicio);
+    return td.getMonth() === d.getMonth() && td.getFullYear() === d.getFullYear();
+  });
+  return match ? match.id : null;
+}
+
+function lerCampo(row, campo) {
+  const idx = mapeamento[campo];
+  if (idx === undefined) return '';
+  return String(Object.values(row)[idx] || '').trim();
+}
+
+function irParaPreview() {
+  linhasProcessadas = dadosPlanilha.map((row, i) => {
+    const nome    = lerCampo(row,'nome');
+    const tel     = normalizarTelefone(lerCampo(row,'whatsapp'));
+    const email   = lerCampo(row,'email');
+    const prog    = lerCampo(row,'programa');
+    const progId  = normalizarPrograma(prog);
+    const turmaRaw= lerCampo(row,'turma');
+    const turmaId = normalizarTurma(turmaRaw);
+    return {
+      _linha:i+2, nome, whatsapp:tel, email,
+      cidade:lerCampo(row,'cidade'), estado:lerCampo(row,'estado'),
+      consultor:lerCampo(row,'consultor'), programa:prog,
+      programa_id:progId, turma_raw:turmaRaw, turma_id:turmaId,
+      convenio:lerCampo(row,'convenio'),
+      status:normalizarStatus(lerCampo(row,'status')),
+      canal:lerCampo(row,'canal'), base:lerCampo(row,'base'),
+      id_externo:lerCampo(row,'id_externo'),
+      sem_contato:!tel&&!email, valido:!!nome
+    };
+  });
+
+  const total=linhasProcessadas.length, validos=linhasProcessadas.filter(r=>r.valido).length;
+  const semC=linhasProcessadas.filter(r=>r.sem_contato).length, inv=total-validos;
+  const comP=linhasProcessadas.filter(r=>r.programa_id).length;
+
+  document.getElementById('preview-stats').innerHTML =
+    ['<div class="imp-stat"><div class="imp-stat-val">'+total.toLocaleString('pt-BR')+'</div><div class="imp-stat-lbl">Total</div></div>',
+     '<div class="imp-stat"><div class="imp-stat-val ok">'+validos.toLocaleString('pt-BR')+'</div><div class="imp-stat-lbl">Válidos</div></div>',
+     '<div class="imp-stat"><div class="imp-stat-val warn">'+semC.toLocaleString('pt-BR')+'</div><div class="imp-stat-lbl">Sem contato</div></div>',
+     '<div class="imp-stat"><div class="imp-stat-val">'+comP.toLocaleString('pt-BR')+'</div><div class="imp-stat-lbl">Com programa</div></div>',
+     '<div class="imp-stat"><div class="imp-stat-val err">'+inv.toLocaleString('pt-BR')+'</div><div class="imp-stat-lbl">Inválidos</div></div>'].join('');
+
+  const amostra = linhasProcessadas.filter(r=>r.valido).slice(0,50);
+  document.getElementById('preview-thead').innerHTML =
+    '<tr><th>#</th><th>Nome</th><th>WhatsApp</th><th>Email</th><th>Cidade/UF</th><th>Programa</th><th>Status</th><th>Consultor</th></tr>';
+  document.getElementById('preview-tbody').innerHTML = amostra.map(r =>
+    '<tr><td style="color:var(--suave)">'+r._linha+'</td><td><strong>'+r.nome+'</strong></td>' +
+    '<td style="font-family:monospace;font-size:11px">'+(r.whatsapp||'<span style="color:#d97706">—</span>')+'</td>' +
+    '<td>'+(r.email||'—')+'</td><td>'+([r.cidade,r.estado].filter(Boolean).join('/')||'—')+'</td>' +
+    '<td style="color:'+(r.programa_id?'#059669':'#d97706')+';font-size:11px">'+(r.programa_id?'✓':'?')+' '+(r.programa||'—')+'</td>' +
+    '<td><span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#e0f2fe;color:#0369a1">'+r.status+'</span></td>' +
+    '<td style="font-size:11px;color:var(--suave)">'+(r.consultor||'—')+'</td></tr>'
+  ).join('');
+
+  document.getElementById('btn-importar').textContent = '✓ Importar ' + validos.toLocaleString('pt-BR') + ' registros';
+  irParaStep(3);
+}
+
+async function executarImportacao() {
+  const btn = document.getElementById('btn-importar');
+  btn.disabled = true;
+  const validos = linhasProcessadas.filter(r=>r.valido);
+  const LOTE = 100;
+  let importados=0, ignorados=0, erros=[];
+
+  const { data:existentes } = await db.from('leads').select('whatsapp').eq('tenant_id',tenantId);
+  const wppSet = new Set((existentes||[]).map(e=>e.whatsapp).filter(Boolean));
+
+  for (let i=0; i<validos.length; i+=LOTE) {
+    const lote = validos.slice(i,i+LOTE);
+    btn.textContent = '⟳ ' + Math.min(i+LOTE,validos.length).toLocaleString('pt-BR') + ' / ' + validos.length.toLocaleString('pt-BR');
+    const novos = lote.filter(r => !r.whatsapp || !wppSet.has(r.whatsapp));
+    ignorados += lote.length - novos.length;
+    if (!novos.length) continue;
+    const payload = novos.map(r => ({
+      tenant_id:tenantId, nome:r.nome, whatsapp:r.whatsapp||null,
+      email:r.email||null, cidade:r.cidade||null, status_kanban:r.status,
+      origem:r.canal||null,
+      origem_convenio:r.convenio||null,
+      turma_origem:r.turma_raw||null,
+      consultor_nome:r.consultor||null,
+      id_externo:r.id_externo||null,
+      score_total:0,
+      criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString()
+    }));
+    const { data:ins, error } = await db.from('leads').insert(payload).select('id');
+    if (error) { erros.push('Lote '+(i/LOTE+1)+': '+error.message); continue; }
+    const cands = (ins||[]).map((r,idx) => {
+      const lead = novos[idx];
+      if (!lead.programa_id && !lead.turma_id) return null;
+      return {
+        tenant_id:tenantId, lead_id:r.id,
+        programa_id:lead.programa_id||null,
+        turma_id:lead.turma_id||null,
+        status:lead.status,
+        criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString()
+      };
+    }).filter(Boolean);
+    if (cands.length) await db.from('candidaturas').insert(cands);
+    importados += ins?.length||0;
+    novos.forEach(r => { if(r.whatsapp) wppSet.add(r.whatsapp); });
+  }
+
+  irParaStep(4);
+  document.getElementById('resultado-importacao').innerHTML =
+    '<div style="font-size:48px;margin-bottom:16px">'+(erros.length?'⚠':'✅')+'</div>' +
+    '<div style="font-size:22px;font-weight:600;color:var(--azul);margin-bottom:12px">Importação concluída!</div>' +
+    '<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">' +
+    '<div class="imp-stat"><div class="imp-stat-val ok">'+importados.toLocaleString('pt-BR')+'</div><div class="imp-stat-lbl">Importados</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val warn">'+ignorados.toLocaleString('pt-BR')+'</div><div class="imp-stat-lbl">Duplicatas</div></div>' +
+    '<div class="imp-stat"><div class="imp-stat-val err">'+erros.length+'</div><div class="imp-stat-lbl">Erros</div></div></div>';
+  toast('✓ ' + importados.toLocaleString('pt-BR') + ' leads importados!');
+}
+
+function novaImportacao() {
+  dadosPlanilha=[]; colunasPlanilha=[]; mapeamento={}; linhasProcessadas=[];
+  document.getElementById('file-info').style.display='none';
+  document.getElementById('file-input').value='';
+  irParaStep(1);
+}
+</script>
+
+</body></html>
