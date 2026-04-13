@@ -769,7 +769,183 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
 
 <div class="toast" id="toast"></div>
 
+
+<!-- MODAL EDITAR TEMPLATE -->
+<div class="tpl-modal-bg" id="tpl-modal-bg" onclick="fecharModalTpl(event)">
+  <div class="tpl-modal">
+    <div class="tpl-modal-header">
+      <h3 id="tpl-modal-titulo">Editar Template</h3>
+      <button class="modal-close" onclick="document.getElementById('tpl-modal-bg').classList.remove('open')">✕</button>
+    </div>
+    <div class="tpl-modal-body">
+      <div class="form-row" style="margin-bottom:12px">
+        <div class="form-group">
+          <label>Trigger (atalho)</label>
+          <input type="text" id="tpl-edit-trigger" placeholder="-inv" style="font-family:monospace">
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <select id="tpl-edit-situacao">
+            <option value="investimento">Investimento</option>
+            <option value="documentos">Documentos</option>
+            <option value="apresentacao">Apresentação</option>
+            <option value="acesso_ava">Acesso AVA</option>
+            <option value="matricula">Matrícula</option>
+            <option value="boas_vindas">Boas-vindas</option>
+            <option value="contrato">Contrato</option>
+            <option value="reengajamento">Reengajamento</option>
+            <option value="geral">Geral</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label>Conteúdo da mensagem</label>
+        <textarea class="tpl-textarea" id="tpl-edit-conteudo" oninput="document.getElementById('tpl-chars').textContent = this.value.length + ' caracteres'"></textarea>
+        <div class="tpl-chars" id="tpl-chars">0 caracteres</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:500;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">
+          Variáveis disponíveis — clique para inserir
+        </div>
+        <div class="vars-grid">
+          <span class="var-chip" onclick="inserirVar('{{nome}}')">{{nome}}</span>
+          <span class="var-chip" onclick="inserirVar('{{programa}}')">{{programa}}</span>
+          <span class="var-chip" onclick="inserirVar('{{turma}}')">{{turma}}</span>
+          <span class="var-chip" onclick="inserirVar('{{bolsa}}')">{{bolsa}}</span>
+          <span class="var-chip" onclick="inserirVar('{{parcelas}}')">{{parcelas}}</span>
+          <span class="var-chip" onclick="inserirVar('{{valor_parcela}}')">{{valor_parcela}}</span>
+          <span class="var-chip" onclick="inserirVar('{{invest_total}}')">{{invest_total}}</span>
+          <span class="var-chip" onclick="inserirVar('{{taxa_matricula}}')">{{taxa_matricula}}</span>
+          <span class="var-chip" onclick="inserirVar('{{data_prevista}}')">{{data_prevista}}</span>
+          <span class="var-chip" onclick="inserirVar('{{consultor}}')">{{consultor}}</span>
+          <span class="var-chip" onclick="inserirVar('{{mensagem_custom}}')">{{mensagem_custom}}</span>
+        </div>
+      </div>
+    </div>
+    <div class="tpl-modal-footer">
+      <button class="btn btn-outline" id="tpl-del-btn" onclick="desativarTemplate()" style="color:#dc2626;border-color:#dc2626">
+        Desativar template
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="document.getElementById('tpl-modal-bg').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarTemplate()">Salvar alterações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+const GH_USER   = 'tomborgeseducacao';
+const GH_REPO   = 'llew';
+const GH_FILE   = 'index.html';
+const GH_BRANCH = 'main';
+
+function getGHToken() {
+  let token = localStorage.getItem('llew_gh_token');
+  if (!token) {
+    token = prompt('Cole seu GitHub Token para habilitar o deploy automático:');
+    if (token && token.startsWith('ghp')) {
+      localStorage.setItem('llew_gh_token', token);
+    } else {
+      return null;
+    }
+  }
+  return token;
+}
+
+async function publicarNoGitHub() {
+  const btn   = document.getElementById('deploy-btn');
+  const icon  = document.getElementById('deploy-icon');
+  const label = document.getElementById('deploy-label');
+  const status = document.getElementById('deploy-status');
+
+  btn.disabled = true;
+  icon.textContent = '⟳';
+  label.textContent = 'Publicando...';
+  status.className = 'deploy-status show';
+  status.textContent = 'Buscando versão atual no GitHub...';
+
+  // Obter token antes de qualquer chamada
+  const GH_TOKEN = getGHToken();
+  if (!GH_TOKEN) {
+    btn.disabled = false;
+    icon.textContent = '↑';
+    label.textContent = 'Publicar em llew.com.br';
+    status.className = 'deploy-status';
+    return;
+  }
+
+  try {
+    // 1. Buscar SHA do arquivo atual
+    const getRes = await fetch(
+      `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`,
+      { headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.v3+json' } }
+    );
+
+    let sha = null;
+    if (getRes.ok) {
+      const getData = await getRes.json();
+      sha = getData.sha;
+    }
+
+    status.textContent = 'Preparando arquivo para upload...';
+
+    // 2. Ler o HTML atual desta página
+    const htmlContent = document.documentElement.outerHTML;
+    const b64 = btoa(unescape(encodeURIComponent(htmlContent)));
+
+    status.textContent = 'Enviando para GitHub...';
+
+    // 3. Fazer o PUT na API do GitHub
+    const body = {
+      message: `LLEW CRM — atualização automática ${new Date().toLocaleString('pt-BR')}`,
+      content: b64,
+      branch: GH_BRANCH,
+    };
+    if (sha) body.sha = sha;
+
+    const putRes = await fetch(
+      `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${GH_TOKEN}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    if (putRes.ok) {
+      icon.textContent = '✓';
+      label.textContent = 'Publicado!';
+      status.className = 'deploy-status show ok';
+      status.textContent = 'Publicado no GitHub! Netlify está atualizando llew.com.br (~30s)';
+      setTimeout(() => {
+        btn.disabled = false;
+        icon.textContent = '↑';
+        label.textContent = 'Publicar em llew.com.br';
+        status.className = 'deploy-status';
+      }, 5000);
+    } else {
+      const err = await putRes.json();
+      throw new Error(err.message || 'Erro ao publicar');
+    }
+
+  } catch(e) {
+    icon.textContent = '✕';
+    label.textContent = 'Erro ao publicar';
+    status.className = 'deploy-status show err';
+    status.textContent = 'Erro: ' + e.message;
+    setTimeout(() => {
+      btn.disabled = false;
+      icon.textContent = '↑';
+      label.textContent = 'Publicar em llew.com.br';
+    }, 4000);
+  }
+}
+
 const SUPA_URL = 'https://etdbrjnxmqqegtsmeufg.supabase.co';
 const SUPA_KEY = 'sb_publishable_5VftYdg--U3dWq7JWP9RaQ_nKZUu3no';
 const { createClient } = supabase;
@@ -1817,185 +1993,4 @@ async function desativarTemplate() {
 // START
 init();
 </script>
-<!-- MODAL EDITAR TEMPLATE -->
-<div class="tpl-modal-bg" id="tpl-modal-bg" onclick="fecharModalTpl(event)">
-  <div class="tpl-modal">
-    <div class="tpl-modal-header">
-      <h3 id="tpl-modal-titulo">Editar Template</h3>
-      <button class="modal-close" onclick="document.getElementById('tpl-modal-bg').classList.remove('open')">✕</button>
-    </div>
-    <div class="tpl-modal-body">
-      <div class="form-row" style="margin-bottom:12px">
-        <div class="form-group">
-          <label>Trigger (atalho)</label>
-          <input type="text" id="tpl-edit-trigger" placeholder="-inv" style="font-family:monospace">
-        </div>
-        <div class="form-group">
-          <label>Categoria</label>
-          <select id="tpl-edit-situacao">
-            <option value="investimento">Investimento</option>
-            <option value="documentos">Documentos</option>
-            <option value="apresentacao">Apresentação</option>
-            <option value="acesso_ava">Acesso AVA</option>
-            <option value="matricula">Matrícula</option>
-            <option value="boas_vindas">Boas-vindas</option>
-            <option value="contrato">Contrato</option>
-            <option value="reengajamento">Reengajamento</option>
-            <option value="geral">Geral</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group" style="margin-bottom:8px">
-        <label>Conteúdo da mensagem</label>
-        <textarea class="tpl-textarea" id="tpl-edit-conteudo" oninput="document.getElementById('tpl-chars').textContent = this.value.length + ' caracteres'"></textarea>
-        <div class="tpl-chars" id="tpl-chars">0 caracteres</div>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:500;color:var(--suave);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">
-          Variáveis disponíveis — clique para inserir
-        </div>
-        <div class="vars-grid">
-          <span class="var-chip" onclick="inserirVar('{{nome}}')">{{nome}}</span>
-          <span class="var-chip" onclick="inserirVar('{{programa}}')">{{programa}}</span>
-          <span class="var-chip" onclick="inserirVar('{{turma}}')">{{turma}}</span>
-          <span class="var-chip" onclick="inserirVar('{{bolsa}}')">{{bolsa}}</span>
-          <span class="var-chip" onclick="inserirVar('{{parcelas}}')">{{parcelas}}</span>
-          <span class="var-chip" onclick="inserirVar('{{valor_parcela}}')">{{valor_parcela}}</span>
-          <span class="var-chip" onclick="inserirVar('{{invest_total}}')">{{invest_total}}</span>
-          <span class="var-chip" onclick="inserirVar('{{taxa_matricula}}')">{{taxa_matricula}}</span>
-          <span class="var-chip" onclick="inserirVar('{{data_prevista}}')">{{data_prevista}}</span>
-          <span class="var-chip" onclick="inserirVar('{{consultor}}')">{{consultor}}</span>
-          <span class="var-chip" onclick="inserirVar('{{mensagem_custom}}')">{{mensagem_custom}}</span>
-        </div>
-      </div>
-    </div>
-    <div class="tpl-modal-footer">
-      <button class="btn btn-outline" id="tpl-del-btn" onclick="desativarTemplate()" style="color:#dc2626;border-color:#dc2626">
-        Desativar template
-      </button>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-outline" onclick="document.getElementById('tpl-modal-bg').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarTemplate()">Salvar alterações</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- deploy bar movida para sidebar -->
-
-<script>
-const GH_USER   = 'tomborgeseducacao';
-const GH_REPO   = 'llew';
-const GH_FILE   = 'index.html';
-const GH_BRANCH = 'main';
-
-function getGHToken() {
-  let token = localStorage.getItem('llew_gh_token');
-  if (!token) {
-    token = prompt('Cole seu GitHub Token para habilitar o deploy automático:');
-    if (token && token.startsWith('ghp')) {
-      localStorage.setItem('llew_gh_token', token);
-    } else {
-      return null;
-    }
-  }
-  return token;
-}
-
-async function publicarNoGitHub() {
-  const btn   = document.getElementById('deploy-btn');
-  const icon  = document.getElementById('deploy-icon');
-  const label = document.getElementById('deploy-label');
-  const status = document.getElementById('deploy-status');
-
-  btn.disabled = true;
-  icon.textContent = '⟳';
-  label.textContent = 'Publicando...';
-  status.className = 'deploy-status show';
-  status.textContent = 'Buscando versão atual no GitHub...';
-
-  // Obter token antes de qualquer chamada
-  const GH_TOKEN = getGHToken();
-  if (!GH_TOKEN) {
-    btn.disabled = false;
-    icon.textContent = '↑';
-    label.textContent = 'Publicar em llew.com.br';
-    status.className = 'deploy-status';
-    return;
-  }
-
-  try {
-    // 1. Buscar SHA do arquivo atual
-    const getRes = await fetch(
-      `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`,
-      { headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.v3+json' } }
-    );
-
-    let sha = null;
-    if (getRes.ok) {
-      const getData = await getRes.json();
-      sha = getData.sha;
-    }
-
-    status.textContent = 'Preparando arquivo para upload...';
-
-    // 2. Ler o HTML atual desta página
-    const htmlContent = document.documentElement.outerHTML;
-    const b64 = btoa(unescape(encodeURIComponent(htmlContent)));
-
-    status.textContent = 'Enviando para GitHub...';
-
-    // 3. Fazer o PUT na API do GitHub
-    const body = {
-      message: `LLEW CRM — atualização automática ${new Date().toLocaleString('pt-BR')}`,
-      content: b64,
-      branch: GH_BRANCH,
-    };
-    if (sha) body.sha = sha;
-
-    const putRes = await fetch(
-      `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FILE}`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `token ${GH_TOKEN}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      }
-    );
-
-    if (putRes.ok) {
-      icon.textContent = '✓';
-      label.textContent = 'Publicado!';
-      status.className = 'deploy-status show ok';
-      status.textContent = 'Publicado no GitHub! Netlify está atualizando llew.com.br (~30s)';
-      setTimeout(() => {
-        btn.disabled = false;
-        icon.textContent = '↑';
-        label.textContent = 'Publicar em llew.com.br';
-        status.className = 'deploy-status';
-      }, 5000);
-    } else {
-      const err = await putRes.json();
-      throw new Error(err.message || 'Erro ao publicar');
-    }
-
-  } catch(e) {
-    icon.textContent = '✕';
-    label.textContent = 'Erro ao publicar';
-    status.className = 'deploy-status show err';
-    status.textContent = 'Erro: ' + e.message;
-    setTimeout(() => {
-      btn.disabled = false;
-      icon.textContent = '↑';
-      label.textContent = 'Publicar em llew.com.br';
-    }, 4000);
-  }
-}
-</script>
-
-
-
 </body></html>
