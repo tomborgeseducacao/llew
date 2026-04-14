@@ -549,12 +549,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
   </div>
 
   <!-- FILTROS -->
-  <div style="background:#fff;border-bottom:1px solid var(--borda);padding:12px 28px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+  <div style="background:#fff;border-bottom:1px solid var(--borda);padding:12px 28px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <input type="text" id="al-busca" placeholder="Buscar por nome, email ou WhatsApp..."
-      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif;width:260px"
+      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif;width:220px"
       oninput="filtrarAlunos()">
-    <select id="al-status" onchange="filtrarAlunos()"
-      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+    <select id="al-status" onchange="filtrarAlunos()" style="font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
       <option value="">Todos os status</option>
       <option value="aluno_ativo">Aluno Ativo</option>
       <option value="concluido">Concluído</option>
@@ -563,19 +562,23 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
       <option value="pre_matricula">Pré-matrícula</option>
       <option value="taxa_paga">Taxa Paga</option>
     </select>
-    <select id="al-programa" onchange="filtrarAlunos()"
-      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+    <select id="al-programa" onchange="filtrarAlunos()" style="font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
       <option value="">Todos os programas</option>
     </select>
-    <select id="al-consultor" onchange="filtrarAlunos()"
-      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+    <select id="al-consultor" onchange="filtrarAlunos()" style="font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
       <option value="">Todos os consultores</option>
     </select>
-    <select id="al-base" onchange="filtrarAlunos()"
-      style="font-size:12px;padding:7px 12px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
-      <option value="">Todas as bases</option>
-      <option value="Atual">Base Atual</option>
-      <option value="Histórica">Base Histórica</option>
+    <select id="al-turma" onchange="filtrarAlunos()" style="font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todas as turmas</option>
+    </select>
+    <select id="al-cidade" onchange="filtrarAlunos()" style="font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todas as cidades</option>
+    </select>
+    <select id="al-canal" onchange="filtrarAlunos()" style="font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todos os canais</option>
+    </select>
+    <select id="al-convenio" onchange="filtrarAlunos()" style="font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--borda);font-family:'DM Sans',sans-serif">
+      <option value="">Todos os convênios</option>
     </select>
     <button onclick="limparFiltrosAlunos()" class="btn btn-outline" style="font-size:12px">✕ Limpar</button>
   </div>
@@ -597,6 +600,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cinza); color: var(
               <th onclick="ordenarAlunos('programa')" style="cursor:pointer">Programa ↕</th>
               <th>Turma</th>
               <th>Consultor</th>
+              <th>Canal</th>
               <th>Convênio</th>
               <th onclick="ordenarAlunos('status_kanban')" style="cursor:pointer">Status ↕</th>
             </tr>
@@ -1449,7 +1453,7 @@ async function carregarAlunos() {
   while (true) {
     const { data, error } = await db
       .from('leads')
-      .select('id,nome,whatsapp,email,cidade,status_kanban,consultor_nome,origem_convenio,turma_origem,score_total,candidaturas(programas(nome),turmas(nome))')
+      .select('id,nome,whatsapp,email,cidade,status_kanban,consultor_nome,origem_convenio,turma_origem,canal,score_total,candidaturas(programas(nome),turmas(nome,data_inicio))')
       .eq('tenant_id', tenantId)
       .order('nome')
       .range(from, from + LOTE - 1);
@@ -1468,51 +1472,52 @@ async function carregarAlunos() {
   document.getElementById('alunos-count').textContent = '(' + todosAlunos.length.toLocaleString('pt-BR') + ' registros)';
 
   // Popular filtros dinâmicos
-  popularFiltroPrograma();
-  popularFiltroConsultor();
+  popularFiltros();
 
   filtrarAlunos();
   renderAlunosStats();
 }
 
-function popularFiltroPrograma() {
-  const progs = [...new Set(todosAlunos
-    .map(a => a.candidaturas?.[0]?.programas?.nome)
-    .filter(Boolean))].sort();
-  const sel = document.getElementById('al-programa');
-  sel.innerHTML = '<option value="">Todos os programas</option>' +
-    progs.map(p => '<option value="' + p + '">' + p + '</option>').join('');
+function popularFiltros() {
+  const makeOpts = (id, label, vals) => {
+    document.getElementById(id).innerHTML =
+      '<option value="">' + label + '</option>' +
+      [...new Set(vals.filter(Boolean))].sort()
+        .map(v => '<option value="' + v + '">' + v + '</option>').join('');
+  };
+  makeOpts('al-programa',  'Todos os programas',   todosAlunos.map(a => a.candidaturas?.[0]?.programas?.nome));
+  makeOpts('al-consultor', 'Todos os consultores', todosAlunos.map(a => a.consultor_nome));
+  makeOpts('al-turma',     'Todas as turmas',      todosAlunos.map(a => a.candidaturas?.[0]?.turmas?.nome || a.turma_origem));
+  makeOpts('al-cidade',    'Todas as cidades',     todosAlunos.map(a => a.cidade));
+  makeOpts('al-canal',     'Todos os canais',      todosAlunos.map(a => a.canal));
+  makeOpts('al-convenio',  'Todos os convênios',   todosAlunos.map(a => a.origem_convenio));
 }
 
-function popularFiltroConsultor() {
-  const cons = [...new Set(todosAlunos
-    .map(a => a.consultor_nome)
-    .filter(Boolean))].sort();
-  const sel = document.getElementById('al-consultor');
-  sel.innerHTML = '<option value="">Todos os consultores</option>' +
-    cons.map(c => '<option value="' + c + '">' + c + '</option>').join('');
-}
+function popularFiltroPrograma() { popularFiltros(); }
+function popularFiltroConsultor() {}
 
 function filtrarAlunos() {
   const busca    = (document.getElementById('al-busca')?.value || '').toLowerCase();
   const status   = document.getElementById('al-status')?.value || '';
   const programa = document.getElementById('al-programa')?.value || '';
   const consultor= document.getElementById('al-consultor')?.value || '';
-  const base     = document.getElementById('al-base')?.value || '';
+  const turma    = document.getElementById('al-turma')?.value || '';
+  const cidade   = document.getElementById('al-cidade')?.value || '';
+  const canal    = document.getElementById('al-canal')?.value || '';
+  const convenio = document.getElementById('al-convenio')?.value || '';
 
   alunosFiltrados = todosAlunos.filter(a => {
-    const progNome = a.candidaturas?.[0]?.programas?.nome || '';
-    const matchBusca = !busca ||
-      (a.nome||'').toLowerCase().includes(busca) ||
-      (a.email||'').toLowerCase().includes(busca) ||
-      (a.whatsapp||'').includes(busca);
+    const progNome  = a.candidaturas?.[0]?.programas?.nome || '';
+    const turmaNome = a.candidaturas?.[0]?.turmas?.nome || a.turma_origem || '';
+    const matchBusca    = !busca    || (a.nome||'').toLowerCase().includes(busca) || (a.email||'').toLowerCase().includes(busca) || (a.whatsapp||'').includes(busca);
     const matchStatus   = !status   || a.status_kanban === status;
     const matchPrograma = !programa || progNome === programa;
     const matchConsultor= !consultor|| (a.consultor_nome||'') === consultor;
-    const matchBase     = !base     || (a.turma_origem||'').includes(base) ||
-                          (base === 'Atual' && !a.turma_origem?.includes('2019')) ||
-                          (base === 'Histórica' && a.turma_origem?.includes('2019'));
-    return matchBusca && matchStatus && matchPrograma && matchConsultor && matchBase;
+    const matchTurma    = !turma    || turmaNome === turma;
+    const matchCidade   = !cidade   || (a.cidade||'') === cidade;
+    const matchCanal    = !canal    || (a.canal||'') === canal;
+    const matchConvenio = !convenio || (a.origem_convenio||'') === convenio;
+    return matchBusca && matchStatus && matchPrograma && matchConsultor && matchTurma && matchCidade && matchCanal && matchConvenio;
   });
 
   // Ordenação
@@ -1542,11 +1547,8 @@ function ordenarAlunos(campo) {
 }
 
 function limparFiltrosAlunos() {
-  document.getElementById('al-busca').value = '';
-  document.getElementById('al-status').value = '';
-  document.getElementById('al-programa').value = '';
-  document.getElementById('al-consultor').value = '';
-  document.getElementById('al-base').value = '';
+  ['al-busca','al-status','al-programa','al-consultor','al-turma','al-cidade','al-canal','al-convenio']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   filtrarAlunos();
 }
 
@@ -1568,16 +1570,16 @@ function renderAlunosTabela() {
     const wppBtn = a.whatsapp
       ? `<button class="aluno-wpp" onclick="event.stopPropagation();abrirWpp('${a.whatsapp}')">&#8599; ${a.whatsapp}</button>`
       : '<span style="color:var(--suave)">—</span>';
-    const loc = (a.cidade || '—');
     return `<tr onclick="abrirDetalhe('${a.id}')">
       <td><strong>${a.nome || '—'}</strong></td>
       <td>${wppBtn}</td>
-      <td style="font-size:12px;color:var(--suave);max-width:180px;overflow:hidden;text-overflow:ellipsis">${a.email || '—'}</td>
-      <td style="font-size:12px">${loc}</td>
-      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">${prog}</td>
-      <td style="font-size:12px;color:var(--suave)">${turma}</td>
+      <td style="font-size:11px;color:var(--suave);max-width:160px;overflow:hidden;text-overflow:ellipsis">${a.email || '—'}</td>
+      <td style="font-size:12px">${a.cidade || '—'}</td>
+      <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis">${prog}</td>
+      <td style="font-size:12px;color:var(--suave);white-space:nowrap">${turma}</td>
       <td style="font-size:12px;color:var(--suave)">${a.consultor_nome || '—'}</td>
-      <td style="font-size:12px;color:var(--suave)">${a.origem_convenio || '—'}</td>
+      <td style="font-size:11px;color:var(--suave);max-width:120px;overflow:hidden;text-overflow:ellipsis">${a.canal || '—'}</td>
+      <td style="font-size:11px;color:var(--suave)">${a.origem_convenio || '—'}</td>
       <td><span class="status-badge" style="background:${bg};color:${tx}">${lb}</span></td>
     </tr>`;
   }).join('');
@@ -1647,7 +1649,7 @@ function renderAlunosStats() {
 }
 
 function exportarAlunos() {
-  const cols = ['Nome','WhatsApp','Email','Cidade','Estado','Programa','Turma','Consultor','Convênio','Status'];
+  const cols = ['Nome','WhatsApp','Email','Cidade','Programa','Turma','Consultor','Canal','Convênio','Status'];
   const rows = alunosFiltrados.map(a => [
     a.nome||'', a.whatsapp||'', a.email||'',
     a.cidade||'',
@@ -2132,17 +2134,29 @@ async function executarImportacao() {
     ignorados += lote.length - novos.length;
     if (!novos.length) continue;
     const payload = novos.map(r => ({
-      tenant_id:tenantId, nome:r.nome, whatsapp:r.whatsapp||null,
-      email:r.email||null, cidade:r.cidade||null, status_kanban:r.status,
+      tenant_id:tenantId,
+      nome:r.nome,
+      whatsapp:r.whatsapp||null,
+      email:r.email||null,
+      cidade:r.cidade||null,
+      status_kanban:'lead_novo',
+      score_total:0,
       origem_convenio:r.convenio||null,
       turma_origem:r.turma_raw||null,
       consultor_nome:r.consultor||null,
       id_externo:r.id_externo||null,
-      score_total:0,
-      criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString()
+      criado_em:new Date().toISOString(),
+      atualizado_em:new Date().toISOString()
     }));
     const { data:ins, error } = await db.from('leads').insert(payload).select('id');
-    if (error) { erros.push('Lote '+(i/LOTE+1)+': '+error.message); continue; }
+    if (error) {
+      const detalhe = error.details || error.hint || error.code || '';
+      const msg = 'Lote '+(i/LOTE+1)+': '+error.message+(detalhe?' ('+detalhe+')':'');
+      erros.push(msg);
+      console.error('LLEW IMPORT ERROR:', error);
+      console.error('Payload amostra:', JSON.stringify(payload[0]));
+      continue;
+    }
     const cands = (ins||[]).map((r,idx) => {
       const lead = novos[idx];
       if (!lead.programa_id && !lead.turma_id) return null;
